@@ -15,11 +15,38 @@
 #ifndef DIR_TREE_H_
 #define DIR_TREE_H_
 
+#include <string>
+#include <vector>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/serialization/vector.hpp>
 
 
 class DirTree {
+private:
+    friend class boost::serialization::access;
+    template <class Archive>
+    void serialize(Archive& ar, const unsigned int /* version */) {
+        ar & _root;
+    }
+
 public:
     struct TreeNode {
+        friend class boost::serialization::access;
+        template <class Archive>
+        void serialize(Archive& ar, const unsigned int /* version */) {
+            ar & type;
+            ar & size;
+            ar & uid;
+            ar & gid;
+            ar & atime;
+            ar & mtime;
+            ar & ctime;
+            ar & host_id;
+            ar & name;
+            ar & children;
+        }
+
         // TODO: maybe more types?
         enum FileType { REGULAR, DIRECTORY };
 
@@ -48,13 +75,17 @@ public:
         TreeNode() { }
     };
 
-    DirTree(): _root(new TreeNode) { }
-    ~DirTree() { delete root; }
+    DirTree(): _root(nullptr) { }
+    ~DirTree() { delete _root; }
+
+    void initialize() { _root = new TreeNode; }
+    TreeNode* root() const { return _root; }
 
 private:
     TreeNode* _root;
 
 };
+
 
 
 #endif /* DIR_TREE_H_ */
