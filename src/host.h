@@ -15,10 +15,34 @@
 #ifndef HOST_H_
 #define HOST_H_
 
+#include <string>
+#include <vector>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/serialization/vector.hpp>
+
 class Hosts {
+private:
+    friend class boost::serialization::access;
+    template <class Archive>
+    void serialize(Archive& ar, const unsigned int /* version */) {
+        ar & _hosts;
+    }
+
     struct Host {
+        friend class boost::serialization::access;
+        template <class Archive>
+        void serialize(Archive& ar, const unsigned int /* version */) {
+            ar & id;
+            ar & address;
+            ar & tmpdir;
+            ar & tcp_port;
+            ar & ssh_port;
+        }
+
         size_t id;
         std::string address;
+        std::string tmpdir;
         uint16_t tcp_port;
         uint16_t ssh_port;
         // TODO: authentication information
@@ -26,9 +50,6 @@ class Hosts {
 
 private:
     std::vector<Host> _hosts;
-
-
-
 };
 
 
