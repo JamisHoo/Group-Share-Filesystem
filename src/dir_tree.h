@@ -16,10 +16,13 @@
 #define DIR_TREE_H_
 
 #include <string>
-#include <vector>
+#include <set>
+#include <iterator>
+#include <algorithm>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/filesystem.hpp>
 
 
 class DirTree {
@@ -31,7 +34,8 @@ private:
     }
 
 public:
-    struct TreeNode {
+    class TreeNode {
+    private:
         friend class boost::serialization::access;
         template <class Archive>
         void serialize(Archive& ar, const unsigned int /* version */) {
@@ -46,7 +50,9 @@ public:
             ar & name;
             ar & children;
         }
-
+    public:
+        bool operator<(const TreeNode& node) const { return name < node.name; }
+        
         // TODO: maybe more types?
         enum FileType { REGULAR, DIRECTORY };
 
@@ -70,7 +76,7 @@ public:
         
         // if name is empty, this is root node
         std::string name;
-        std::vector<TreeNode> children;
+        std::set<TreeNode> children;
 
         TreeNode() { }
     };
@@ -80,6 +86,55 @@ public:
 
     void initialize() { _root = new TreeNode; }
     TreeNode* root() const { return _root; }
+
+    std::vector<std::string> hasConflict(const DirTree& tree) const {
+        std::vector<std::string> conflicts;
+        // TODO: rewrite this
+        std::vector<TreeNode> confs; 
+
+        auto treenode_comparator = [](const TreeNode& a, const TreeNode& b)->bool {
+            return a.name == b.name;
+        };
+
+        set_intersection(_root->children.begin(), _root->children.end(),
+                         tree.root()->children.begin(), tree.root()->children.end(),
+                         std::back_inserter(confs), 
+                         treenode_comparator);
+
+        for (const auto i: confs)
+            conflicts.push_back(i.name);
+        return conflicts;
+    }
+
+    // merge dirtree from host_id to self's dirtree
+    // assert no conflicts
+    void merge(const DirTree& tree, const size_t host_id) {
+        for (auto treenode: tree.root()->children) {
+            treenode.host_id = host_id;
+            _root->children.insert(treenode);
+        }
+    }
+
+    const TreeNode* find(const std::string& path) {
+        using namespace boost::filesystem;
+        boost::filesystem::path p(path);
+        const TreeNode* node = nullptr;
+        TreeNode key;
+        for (auto ite = p.begin(); ite != p.end(); ++ite) {
+            assert(*ite != "..");
+            if (*ite == ".") continue;
+            else if (*ite == "/" && !node) node = _root;
+            else if (!node) continue;
+            else {
+                key.name = ite->string();
+                auto set_ite = node->children.find(key);
+                if (set_ite == node->children.end()) return nullptr;
+                node = &(*set_ite);
+            }
+        }
+
+        return node;
+    }
 
 private:
     TreeNode* _root;

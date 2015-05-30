@@ -28,7 +28,7 @@ private:
     void serialize(Archive& ar, const unsigned int /* version */) {
         ar & _hosts;
     }
-
+public:
     struct Host {
         friend class boost::serialization::access;
         template <class Archive>
@@ -41,12 +41,15 @@ private:
         }
 
         size_t id;
+        // TODO: asio address
         std::string address;
         std::string tmpdir;
         uint16_t tcp_port;
         uint16_t ssh_port;
         // TODO: authentication information
     };
+
+    size_t size() const { return _hosts.size(); }
 
 private:
     std::vector<Host> _hosts;
