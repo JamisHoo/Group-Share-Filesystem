@@ -76,7 +76,7 @@ public:
         
         // if name is empty, this is root node
         std::string name;
-        std::set<TreeNode> children;
+        mutable std::set<TreeNode> children;
 
         TreeNode() { }
     };
@@ -140,7 +140,5 @@ private:
     TreeNode* _root;
 
 };
-
-
 
 #endif /* DIR_TREE_H_ */

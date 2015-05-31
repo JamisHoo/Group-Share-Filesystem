@@ -3,7 +3,7 @@
  *  Distributed under the MIT license 
  *  (See accompanying file LICENSE or copy at http://opensource.org/licenses/MIT)
  *  
- *  Project: 
+ *  Project: Group-Share Filesystem
  *  Filename: fuse_interface.h 
  *  Version: 1.0
  *  Author: Jamis Hoo
@@ -58,51 +58,53 @@ public:
         return 0;
     }
 
-    static int readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-                       off_t offset, struct fuse_file_info *fi) {
+    static int readdir(const char* path, void* buf, fuse_fill_dir_t filler,
+                       off_t /* offset */, struct fuse_file_info* /* fi */) {
+        const DirTree::TreeNode* node = _user_fs->dir_tree.find(path);
+        if (!node) return -ENOENT;
 
-        (void) offset;
-        (void) fi;
-
-        if (strcmp(path, "/") != 0)
-            return -ENOENT;
-
-        filler(buf, ".", NULL, 0);
-        filler(buf, "..", NULL, 0);
-        filler(buf, "a", NULL, 0);
-        filler(buf, "b", NULL, 0);
+        if (node->type != DirTree::TreeNode::DIRECTORY) return -ENOTDIR;
+        
+        for (const auto& i: node->children) 
+            filler(buf, i.name.c_str(), 0, 0);
 
         return 0;
     }
 
-    static int open(const char *path, fuse_file_info *fi) {
-        if (strcmp(path, "/a") != 0 && strcmp(path, "/b") != 0)
-            return -ENOENT;
-
+    static int open(const char* path, fuse_file_info* fi) {
+        const DirTree::TreeNode* node = _user_fs->dir_tree.find(path);
+        if (!node) return -ENOENT;
+        
         if ((fi->flags & 3) != O_RDONLY)
             return -EACCES;
 
         return 0;
     }
 
-    static int read(const char *path, char *buf, size_t size, off_t offset,
-                    fuse_file_info *fi) {
-        (void) fi;
-        if(strcmp(path, "/a") != 0 && strcmp(path, "/b") != 0)
-            return -ENOENT;
+    static int read(const char* path, char* buf, size_t size, off_t offset,
+                    fuse_file_info* /* fi */) {
+        
+        const DirTree::TreeNode* node = _user_fs->dir_tree.find(path);
+        if (!node) return -ENOENT;
 
-        char hello_str[] = " Under implementation\n";
+        if (node->type == DirTree::TreeNode::DIRECTORY) return -EISDIR;
 
-        off_t len = strlen(hello_str);
-        off_t ssize = size;
-        if (offset < len) {
-            if (offset + ssize > len)
-                ssize = len - offset;
-            memcpy(buf, hello_str + offset, ssize);
-        } else
-            ssize = 0;
+        assert(offset >= 0);
 
-        return ssize;
+        size_t read_offset = offset;
+        size_t read_size = size;
+        size_t file_size = node->size;
+
+        if (read_offset >= file_size) return 0;
+
+        if (read_offset + read_size > file_size)
+            read_size = file_size - read_offset;
+        
+        // TODO: read file from remote host
+        for (size_t i = 0; i < read_size; ++i)
+            buf[i] = i;
+
+        return read_size;
     }
 
     static fuse_operations* get() {

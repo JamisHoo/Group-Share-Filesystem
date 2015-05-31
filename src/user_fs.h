@@ -58,7 +58,7 @@ public:
     void initDirTree(const std::string& dir, const std::string& tmpdir) {
         using namespace boost::filesystem;
 
-        // may throw filesystem_error when permission denied
+        // may throw filesystem_error
         
         if (!is_directory(dir))
             throw std::invalid_argument(dir + " is not directory. ");
@@ -68,8 +68,6 @@ public:
         
         if (!is_directory(dir))
             throw std::invalid_argument(dir + " is not directory. ");
-
-        path tmp_dir(tmpdir);
 
         if (exists(tmpdir / dir)) 
             throw std::invalid_argument(std::string("Assert ") + path(tmpdir / dir).string() + " not exists. ");
@@ -82,23 +80,43 @@ public:
 
         dir_tree.initialize();
         dir_tree.root()->type = DirTree::TreeNode::DIRECTORY;
+        // TODO: get dir inode size
         dir_tree.root()->size = 0;
         dir_tree.root()->host_id = _host_id;
-        for (auto& f: directory_iterator(dir)) {
-            // TODO: recursively
-            if (!is_regular_file(f)) continue;
-            
-            // create hard link, (src, dst)
-            create_hard_link(f, tmp_dir / f);
 
-            DirTree::TreeNode filenode;
-            filenode.type = DirTree::TreeNode::REGULAR;
-            filenode.name = f.path().filename().string();
-            filenode.size = file_size(f);
-            filenode.host_id = _host_id;
+        std::function<void (const path&, const path&, const DirTree::TreeNode&) > traverseDirectory;
+        traverseDirectory = [this, &traverseDirectory]
+            (const path& dir, const path& tmpdir, const DirTree::TreeNode& parent)->void {
+            for (auto& f: directory_iterator(dir)) {
+                if (is_directory(f)) {
+                    create_directory(tmpdir / f);
 
-            dir_tree.root()->children.insert(filenode);
-        }
+                    DirTree::TreeNode dirnode;
+                    dirnode.type = DirTree::TreeNode::DIRECTORY;
+                    dirnode.name = f.path().filename().string();
+                    // TODO: get dir inode size
+                    dirnode.size = 0;
+                    dirnode.host_id = _host_id;
+
+                    auto insert_rtv = parent.children.insert(dirnode);
+
+                    traverseDirectory(f, tmpdir, *(insert_rtv.first));
+                } else if (is_regular_file(f)) {
+                    // create hard link (src, dst)
+                    create_hard_link(f, tmpdir / f);
+
+                    DirTree::TreeNode filenode;
+                    filenode.type = DirTree::TreeNode::REGULAR;
+                    filenode.name = f.path().filename().string();
+                    filenode.size = file_size(f);
+                    filenode.host_id = _host_id;
+
+                    parent.children.insert(filenode);
+                }
+            }
+        };
+
+        traverseDirectory(dir, tmpdir, *dir_tree.root());
     }
 
     size_t hostID() const { return _host_id; }
