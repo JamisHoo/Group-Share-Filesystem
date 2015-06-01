@@ -42,7 +42,7 @@ public:
 
     void initHost(const std::string& addr, const uint16_t tcp_port, const uint16_t ssh_port) {
         // this functions should only be called when program initializes
-        assert(hosts.size() == 0);
+        assert(_hosts.size() == 0);
         assert(_host_id == 0 || _host_id == 1);
         
         // TODO: asio check addr validity
@@ -78,11 +78,11 @@ public:
         _tmpdir = tmpdir;
         _dir = dir;
 
-        dir_tree.initialize();
-        dir_tree.root()->type = DirTree::TreeNode::DIRECTORY;
+        _dir_tree.initialize();
+        _dir_tree.root()->type = DirTree::TreeNode::DIRECTORY;
         // TODO: get dir inode size
-        dir_tree.root()->size = 0;
-        dir_tree.root()->host_id = _host_id;
+        _dir_tree.root()->size = 0;
+        _dir_tree.root()->host_id = _host_id;
 
         std::function<void (const path&, const path&, const DirTree::TreeNode&) > traverseDirectory;
         traverseDirectory = [this, &traverseDirectory]
@@ -116,13 +116,15 @@ public:
             }
         };
 
-        traverseDirectory(dir, tmpdir, *dir_tree.root());
+        traverseDirectory(dir, tmpdir, *_dir_tree.root());
     }
 
     size_t hostID() const { return _host_id; }
 
-    DirTree dir_tree;
-    Hosts hosts;
+    const DirTree::TreeNode* find(const std::string& path) const {
+        return _dir_tree.find(path);
+    }
+
 
 private:
 // DEBUG
@@ -131,6 +133,9 @@ public:
     size_t _host_id;
     std::string _tmpdir;
     std::string _dir;
+
+    DirTree _dir_tree;
+    Hosts _hosts;
 
 };
 

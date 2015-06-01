@@ -40,7 +40,7 @@ public:
         memset(stbuf, 0, sizeof(struct stat));
 
         // find in dir tree
-        const DirTree::TreeNode* node = _user_fs->dir_tree.find(path);
+        const DirTree::TreeNode* node = _user_fs->find(path);
         
         // not found
         if (!node) return -ENOENT;
@@ -60,7 +60,7 @@ public:
 
     static int readdir(const char* path, void* buf, fuse_fill_dir_t filler,
                        off_t /* offset */, struct fuse_file_info* /* fi */) {
-        const DirTree::TreeNode* node = _user_fs->dir_tree.find(path);
+        const DirTree::TreeNode* node = _user_fs->find(path);
         if (!node) return -ENOENT;
 
         if (node->type != DirTree::TreeNode::DIRECTORY) return -ENOTDIR;
@@ -72,7 +72,7 @@ public:
     }
 
     static int open(const char* path, fuse_file_info* fi) {
-        const DirTree::TreeNode* node = _user_fs->dir_tree.find(path);
+        const DirTree::TreeNode* node = _user_fs->find(path);
         if (!node) return -ENOENT;
         
         if ((fi->flags & 3) != O_RDONLY)
@@ -84,7 +84,7 @@ public:
     static int read(const char* path, char* buf, size_t size, off_t offset,
                     fuse_file_info* /* fi */) {
         
-        const DirTree::TreeNode* node = _user_fs->dir_tree.find(path);
+        const DirTree::TreeNode* node = _user_fs->find(path);
         if (!node) return -ENOENT;
 
         if (node->type == DirTree::TreeNode::DIRECTORY) return -EISDIR;

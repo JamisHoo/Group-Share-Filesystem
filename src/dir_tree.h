@@ -115,7 +115,7 @@ public:
         }
     }
 
-    const TreeNode* find(const std::string& path) {
+    const TreeNode* find(const std::string& path) const {
         using namespace boost::filesystem;
         boost::filesystem::path p(path);
         const TreeNode* node = nullptr;
