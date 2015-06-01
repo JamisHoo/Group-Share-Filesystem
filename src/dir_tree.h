@@ -17,11 +17,12 @@
 
 #include <string>
 #include <set>
+#include <sstream>
 #include <iterator>
 #include <algorithm>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
-#include <boost/serialization/vector.hpp>
+#include <boost/serialization/set.hpp>
 #include <boost/filesystem.hpp>
 
 
@@ -135,6 +136,28 @@ public:
 
         return node;
     }
+
+    static std::string serialize(const DirTree& tree) {
+        std::ostringstream ofs;
+        boost::archive::text_oarchive oa(ofs);
+
+        oa << tree;
+
+        return ofs.str();
+    }
+
+    static DirTree deserialize(const std::string& byte_sequence) {
+        std::istringstream ifs(byte_sequence);
+
+        boost::archive::text_iarchive ia(ifs);
+
+        DirTree tree;
+
+        ia >> tree;
+
+        return tree;
+    }
+
 
 private:
     TreeNode* _root;
