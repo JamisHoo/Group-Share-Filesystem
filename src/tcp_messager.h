@@ -33,18 +33,15 @@ class Packet {
     // received packet:
     // _size : length of primary data
     // _data : primary data
-    uint32_t _size;
+    uint64_t _size;
     std::string _data;
 public: 
     Packet() { _size = 0; }
 
     void encodeData(const std::string& data) {
         _size = data.length();
-        _data.resize(sizeof(_size));
 
-        // TODO; replace with byte_order function
-        for (size_t i = 0; i < sizeof(_size); ++i)
-            _data[i] = _size >> i * 8 & 0xff;
+        _data = host_to_network_64(_size);
 
         _size += sizeof(_size);
 
@@ -52,7 +49,7 @@ public:
     }
 
     void decodeSize(const char* size) {
-        _size = network_to_host_32(size);
+        _size = network_to_host_64(size);
     }
 
     //void setData(const std::string& data) { _data = data; }
@@ -86,17 +83,11 @@ public:
     // send packet to master
     // packet can be released when this function returns
     void write(const Packet& packet) {
-        // move packet to heap
-        Packet* packet_in_heap = new Packet(packet);
-        
         _io_service.post(
-        // TODO: just pass by value
-        [this, packet_in_heap]() {
+        [this, packet]() {
             bool write_in_progress = _write_packets.size();
 
-            _write_packets.push(*packet_in_heap);
-
-            delete packet_in_heap;
+            _write_packets.push(packet);
 
             if (!write_in_progress) 
                 do_write();
@@ -223,12 +214,10 @@ public:
     // send packet to all slaves
     // packet can be released when this function returns
     void write(const Packet& packet) {
-        // we need to move packet to heap for this is async write
-        Packet* packet_in_heap = new Packet(packet);
 
         _io_service.post(
-        [this, packet_in_heap]() {
-            std::shared_ptr<Packet> pointer(packet_in_heap);            
+        [this, packet]() {
+            std::shared_ptr<Packet> pointer(new Packet(packet));
             
             for (auto connect_iter = _connections.begin(); connect_iter != _connections.end(); ++connect_iter) {
                 std::queue< std::shared_ptr<Packet> >& queue = std::get<3>(*connect_iter);
@@ -241,12 +230,10 @@ public:
     }
 
     void writeTo(const Packet packet, const Connection::iterator iter) {
-        // move packet to heap
-        Packet* packet_in_heap = new Packet(packet);
 
         _io_service.post(
-        [this, packet_in_heap, iter]() {
-            std::shared_ptr<Packet> pointer(packet_in_heap);
+        [this, packet, iter]() {
+            std::shared_ptr<Packet> pointer(new Packet(packet));
 
             std::queue< std::shared_ptr<Packet> >& queue = std::get<3>(*iter);
             bool write_in_progress = queue.size();
