@@ -89,7 +89,9 @@ public:
 
         _dir_tree.initialize();
         _dir_tree.root()->type = DirTree::TreeNode::DIRECTORY;
-        // TODO: get dir inode size
+        
+        // It seems there's is a portable way to get dir size, just set it to 0
+        // If anybody knows how to do that, please tell me. Thanks.
         _dir_tree.root()->size = 0;
         _dir_tree.root()->host_id = _host_id;
 
@@ -103,7 +105,6 @@ public:
                     DirTree::TreeNode dirnode;
                     dirnode.type = DirTree::TreeNode::DIRECTORY;
                     dirnode.name = f.path().filename().string();
-                    // TODO: get dir inode size
                     dirnode.size = 0;
                     dirnode.host_id = _host_id;
 
