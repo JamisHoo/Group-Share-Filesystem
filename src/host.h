@@ -40,6 +40,28 @@ public:
             ar & ssh_port;
         }
 
+
+        static std::string serialize(const Host& host) {
+            std::ostringstream ofs;
+            boost::archive::text_oarchive oa(ofs);
+
+            oa << host;
+
+            return ofs.str();
+        }
+
+        static Host deserialize(const std::string& byte_sequence) {
+            std::istringstream ifs(byte_sequence);
+
+            boost::archive::text_iarchive ia(ifs);
+
+            Host host;
+
+            ia >> host;
+
+            return host;
+        }
+
         size_t id;
         std::string address;
         std::string tmpdir;
