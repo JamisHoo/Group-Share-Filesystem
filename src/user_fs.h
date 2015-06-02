@@ -129,6 +129,9 @@ public:
                     default:
                         treenode_type = DirTree::TreeNode::UNKNOWN;
                 }
+                
+                // TODO: maintain root directory hard link number
+                // TODO: add atime ctime mtime
 
                 if (treenode_type == DirTree::TreeNode::UNKNOWN)
                     continue;
