@@ -99,7 +99,40 @@ public:
         traverseDirectory = [this, &traverseDirectory]
             (const path& dir, const path& tmpdir, const DirTree::TreeNode& parent)->void {
             for (auto& f: directory_iterator(dir)) {
-                if (is_directory(f)) {
+                auto file_type = status(f).type();
+
+                decltype(DirTree::TreeNode::type) treenode_type;
+
+                switch (file_type) {
+                    case file_type::directory_file: 
+                        treenode_type = DirTree::TreeNode::DIRECTORY;
+                        break;
+                    case file_type::regular_file: 
+                        treenode_type = DirTree::TreeNode::REGULAR;
+                        break;
+                    case file_type::character_file:
+                        treenode_type = DirTree::TreeNode::CHRDEVICE;
+                        break;
+                    case file_type::block_file:
+                        treenode_type = DirTree::TreeNode::BLKDEVICE;
+                        break;
+                    case file_type::fifo_file:
+                        treenode_type = DirTree::TreeNode::FIFO;
+                        break;
+                    case file_type::symlink_file:
+                        treenode_type = DirTree::TreeNode::SYMLINK;
+                        break;
+                    case file_type::socket_file:
+                        treenode_type = DirTree::TreeNode::SOCKET;
+                        break;
+                    case file_type::type_unknown:
+                    default:
+                        treenode_type = DirTree::TreeNode::UNKNOWN;
+                }
+
+                if (treenode_type == DirTree::TreeNode::UNKNOWN)
+                    continue;
+                else if (treenode_type == DirTree::TreeNode::DIRECTORY) {
                     create_directory(tmpdir / f);
 
                     DirTree::TreeNode dirnode;
@@ -111,7 +144,7 @@ public:
                     auto insert_rtv = parent.children.insert(dirnode);
 
                     traverseDirectory(f, tmpdir, *(insert_rtv.first));
-                } else if (is_regular_file(f)) {
+                } else {
                     // create hard link (src, dst)
                     create_hard_link(f, tmpdir / f);
 
