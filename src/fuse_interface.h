@@ -45,6 +45,7 @@ public:
         // not found
         if (!node) return -ENOENT;
         
+        // TODO: support more file types and hard link
         
         if (node->type == DirTree::TreeNode::REGULAR) {
             stbuf->st_mode = S_IFREG | 0444;
