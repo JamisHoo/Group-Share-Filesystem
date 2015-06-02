@@ -48,6 +48,7 @@ public:
             ar & mtime;
             ar & ctime;
             ar & host_id;
+            ar & num_links;
             ar & name;
             ar & children;
         }
@@ -74,6 +75,8 @@ public:
         size_t ctime;
         // this tree node belongs to which host
         size_t host_id;
+        // number of hard links
+        size_t num_links;
         
         // if name is empty, this is root node
         std::string name;

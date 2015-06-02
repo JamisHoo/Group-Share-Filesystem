@@ -140,6 +140,7 @@ public:
                     dirnode.name = f.path().filename().string();
                     dirnode.size = 0;
                     dirnode.host_id = _host_id;
+                    dirnode.num_links = hard_link_count(f.path());
 
                     auto insert_rtv = parent.children.insert(dirnode);
 
@@ -153,6 +154,8 @@ public:
                     filenode.name = f.path().filename().string();
                     filenode.size = file_size(f);
                     filenode.host_id = _host_id;
+                    // GSFS create another hard link for files except directory
+                    filenode.num_links = 1 + hard_link_count(f.path());
 
                     parent.children.insert(filenode);
                 }
