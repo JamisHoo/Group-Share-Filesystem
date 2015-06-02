@@ -19,8 +19,8 @@ void TCPSlaveMessager::read(const Packet& packet) const {
     _owner->read(packet);
 }
 
-void TCPMasterMessager::read(const Packet& packet) const {
-    _owner->read(packet);
+void TCPMasterMessager::read(const Packet& packet, Connection::iterator iter) const {
+    _owner->read(packet, iter);
 }
 
 void TCPSlaveMessager::disconnect() const {

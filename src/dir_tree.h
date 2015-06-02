@@ -90,20 +90,21 @@ public:
 
     std::vector<std::string> hasConflict(const DirTree& tree) const {
         std::vector<std::string> conflicts;
-        // TODO: rewrite this
-        std::vector<TreeNode> confs; 
 
-        auto treenode_comparator = [](const TreeNode& a, const TreeNode& b)->bool {
-            return a.name == b.name;
-        };
+        auto first1 = tree.root()->children.begin();
+        auto last1 = tree.root()->children.begin();
+        auto first2 = _root->children.begin();
+        auto last2 = _root->children.end();
 
-        set_intersection(_root->children.begin(), _root->children.end(),
-                         tree.root()->children.begin(), tree.root()->children.end(),
-                         std::back_inserter(confs), 
-                         treenode_comparator);
+        while (first1 != last1 && first2 != last2) {
+            if (*first1 < *first2) ++first1;
+            else if (*first2 < *first1) ++first2;
+            else {
+                conflicts.push_back(first1->name);
+                ++first1, ++first2;
+            }
+        }
 
-        for (const auto i: confs)
-            conflicts.push_back(i.name);
         return conflicts;
     }
 

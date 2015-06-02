@@ -62,7 +62,7 @@ public:
             return host;
         }
 
-        size_t id;
+        uint64_t id;
         std::string address;
         std::string tmpdir;
         uint16_t tcp_port;

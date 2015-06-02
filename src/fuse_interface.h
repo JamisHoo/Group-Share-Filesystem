@@ -53,7 +53,10 @@ public:
         } else if (node->type == DirTree::TreeNode::DIRECTORY) {
             stbuf->st_mode = S_IFDIR | 0755;
             stbuf->st_nlink = 2;
-        } else assert(0);
+        } else {
+            std::cerr << "read path error at " << path << "." << std::endl;
+            return -ENOENT;
+        }
 
         return 0;
     }

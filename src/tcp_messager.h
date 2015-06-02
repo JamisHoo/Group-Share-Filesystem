@@ -20,8 +20,10 @@
 #include <queue>
 #include <list>
 #include <boost/asio.hpp>
+#include "bytes_order.h"
 
 class TCPManager;
+class UserFS;
 
 
 class Packet {
@@ -40,6 +42,7 @@ public:
         _size = data.length();
         _data.resize(sizeof(_size));
 
+        // TODO; replace with byte_order function
         for (size_t i = 0; i < sizeof(_size); ++i)
             _data[i] = _size >> i * 8 & 0xff;
 
@@ -49,9 +52,7 @@ public:
     }
 
     void decodeSize(const char* size) {
-        _size = 0;
-        for (size_t i = 0; i < sizeof(_size); ++i)
-            _size |= size[i] << i * 8;
+        _size = network_to_host_32(size);
     }
 
     //void setData(const std::string& data) { _data = data; }
@@ -73,15 +74,6 @@ public:
         boost::system::error_code ec;
         _endpoint_iterator = _resolver.resolve({ addr, std::to_string(port) }, ec);
 
-        /*
-        for (auto i = _endpoint_iterator;
-                  i != boost::asio::ip::tcp::resolver::iterator(); ++i)
-            std::cout << "Resolve: " 
-                      << i->endpoint().address().to_string() << ":"
-                      << i->endpoint().port() << ' '
-                      << std::endl;
-        */
-
         return ec;
     }
 
@@ -98,6 +90,7 @@ public:
         Packet* packet_in_heap = new Packet(packet);
         
         _io_service.post(
+        // TODO: just pass by value
         [this, packet_in_heap]() {
             bool write_in_progress = _write_packets.size();
 
@@ -113,6 +106,7 @@ public:
     // a packet has been read, pass it to owner
     void read(const Packet& packet) const;
 
+    // TODO?
     // connect master failed, or connection interrupted
     void disconnect() const;
     
@@ -185,6 +179,7 @@ private:
 };
 
 class TCPMasterMessager {
+public:
     typedef std::list< 
         std::tuple<
                    // socket of this connection
@@ -197,7 +192,6 @@ class TCPMasterMessager {
                    std::queue< std::shared_ptr<Packet> > 
                   > > Connection;
 
-public:
     TCPMasterMessager(TCPManager* owner): 
         _acceptor(_io_service), _socket(_io_service), _resolver(_io_service), _owner(owner) { }
 
@@ -246,8 +240,38 @@ public:
         });
     }
 
+    void writeTo(const Packet packet, const Connection::iterator iter) {
+        // move packet to heap
+        Packet* packet_in_heap = new Packet(packet);
+
+        _io_service.post(
+        [this, packet_in_heap, iter]() {
+            std::shared_ptr<Packet> pointer(packet_in_heap);
+
+            std::queue< std::shared_ptr<Packet> >& queue = std::get<3>(*iter);
+            bool write_in_progress = queue.size();
+            queue.push(pointer);
+            if (!write_in_progress)
+                do_write(iter);
+        });
+    }
+
     // a pakcet has been read, send it to owner
-    void read(const Packet& packet) const;
+    void read(const Packet& packet, Connection::iterator iter) const;
+
+    // close connection with a slave
+    void close(Connection::iterator connect_iter) {
+        boost::asio::ip::tcp::socket& socket = std::get<0>(*connect_iter);
+
+
+        boost::system::error_code ec;
+        socket.close(ec);
+        
+        // if erase this element from list,
+        // there's one scenario that the iterator is erased more than once 
+        // because this function maybe interrupted by async I/O
+        // _connections.erase(connect_iter);
+    }
 
 private:
     void do_accept() {
@@ -269,13 +293,11 @@ private:
 
     void do_new_connection(Connection::iterator connect_iter) {
         boost::asio::ip::tcp::socket& socket = std::get<0>(*connect_iter);
-
-        /*
+        
         std::cout << "New connection from " 
                   << socket.remote_endpoint().address().to_string() << ":"
                   << socket.remote_endpoint().port() << std::endl;
-        */
-
+        
         do_read_header(connect_iter);
     }
 
@@ -284,27 +306,19 @@ private:
         std::vector<char>& buffer = std::get<1>(*connect_iter);
         Packet& packet = std::get<2>(*connect_iter);
 
-        //std::cout << "Do read header. " << std::endl;
-
         buffer.resize(Packet::sizeLength());
 
         boost::asio::async_read(socket, 
             boost::asio::buffer(buffer.data(), Packet::sizeLength()),
 
         [this, connect_iter, &socket, &buffer, &packet](boost::system::error_code ec, std::size_t length) {
-            //std::cout << "read length == " << length << std::endl;
             if (!ec && length == Packet::sizeLength()) {
                 
-                //for (size_t i = 0; i < length; ++i) printf("%02x ", buffer.data()[i]); std::cout << std::endl;
-
                 packet.decodeSize(buffer.data());
-                //std::cout << "Read header, packet size is " << packet.size() << " bytes. " << std::endl;
 
                 do_read_body(connect_iter);
             } else {
-                socket.close();
-                _connections.erase(connect_iter);
-                //std::cout << "close socket. connections size: " << _connections.size() << std::endl;
+                close(connect_iter);
             }
         });
     }
@@ -314,26 +328,20 @@ private:
         std::vector<char>& buffer = std::get<1>(*connect_iter);
         Packet& packet = std::get<2>(*connect_iter);
 
-        //std::cout << "Read body, " << packet.size() << " bytes expected. " << std::endl;
         buffer.resize(packet.size());
 
         boost::asio::async_read(socket,
             boost::asio::buffer(buffer.data(), packet.size()),
 
         [this, connect_iter, &socket, &buffer, &packet](boost::system::error_code ec, std::size_t length) {
-
-            //std::cout << "read length == " << length << " bytes. " << std::endl;
-
             if (!ec && length == packet.size()) {
                 packet.setData(buffer.data());
 
-                read(packet);
+                read(packet, connect_iter);
 
                 do_read_header(connect_iter);
             } else {
-                socket.close();
-                _connections.erase(connect_iter);
-                //std::cout << "close socket2. connections size: " << _connections.size() << std::endl;
+                close(connect_iter);
             }
         });
     }
@@ -352,12 +360,12 @@ private:
                 send_queue.pop();
                 if (!send_queue.empty()) do_write(connect_iter);
             } else {
-                socket.close();
-                _connections.erase(connect_iter);
-                //std::cout << "close socket3. connections size: " << _connections.size() << std::endl;
+                close(connect_iter);
             }
         });
     }
+
+    
 
     boost::asio::io_service _io_service;
     boost::asio::ip::tcp::acceptor _acceptor; 

@@ -5,28 +5,48 @@
 fuse_operations FUSEInterface::_gsfs_oper;
 UserFS* FUSEInterface::_user_fs = nullptr;
 
-int main(int /* argc */, char** argv) {
+int main(int argc, char** argv) {
     using namespace std;
 
+    if (argc == 1) {
+        std::cout << "./" << argv[0] << " [ client | server ]. \n";
+        return 1;
+    }
 
-    string mount_point = "test";
+
+    string mount_point;
     string tmp_dir = "tmp";
+    bool is_master = 0;
+
+    if (std::string(argv[1]) == "client1")
+        mount_point = "test2";
+    else if (std::string(argv[1]) == "server")
+        mount_point = "test1", is_master = 1;
+    else if (std::string(argv[1]) == "client")
+        mount_point = "test";
+    else {
+        std::cout << "./" << argv[0] << " [ client | server ]. \n";
+        return 1;
+    }
+
+
 
     UserFS fs;
-    fs.setMaster();
+    if (is_master) fs.setMaster();
     fs.initDirTree(mount_point, tmp_dir);
-    fs.initHost("localhost", 10000, 20);
+    fs.initHost("127.0.0.1", 10000, 20);
+    fs.initTCPNetwork("127.0.0.1", 10000);
 
     FUSEInterface fuse;
 
     fuse.initialize(&fs);
     
-    char* fuse_argv0 = argv[0];
-    char* fuse_argv1 = new char[mount_point.length()];
-    memcpy(fuse_argv1, mount_point.data(), mount_point.length());
+    std::string fuse_argvs[] = { argv[0], mount_point, "-f" };
 
-    char* fuse_argv[2] = { fuse_argv0, fuse_argv1 };
+    char* fuse_argv[3] = { &fuse_argvs[0][0], 
+                           &fuse_argvs[1][0],
+                           &fuse_argvs[2][0] };
 
 
-    return fuse_main(2, fuse_argv, fuse.get(), NULL);
+    return fuse_main(3, fuse_argv, fuse.get(), NULL);
 }
