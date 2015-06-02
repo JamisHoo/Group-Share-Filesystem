@@ -28,7 +28,7 @@
 *.app
 
 
-#MacOS X
+# MacOS X
 *.DS_Store
 
 # vim
