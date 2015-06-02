@@ -18,7 +18,7 @@
 #include <cinttypes>
 #include <string>
 
-inline void host_to_network_16(void* dst, void* from) {
+inline void host_to_network_16(void* dst, const void* from) {
     uint16_t* host = (uint16_t*)(from);
     uint8_t* network = (uint8_t*)(dst);
 
@@ -35,20 +35,20 @@ inline std::string host_to_network_16(uint16_t host) {
     return network;
 }
 
-inline void network_to_host_16(void* dst, void* from) {
+inline void network_to_host_16(void* dst, const void* from) {
     uint16_t* host = (uint16_t*)(dst);
     uint8_t* network = (uint8_t*)(from);
 
     *host = network[0] | network[1] << 8;
 }
 
-inline uint16_t network_to_host_16(void* from) {
+inline uint16_t network_to_host_16(const void* from) {
     uint16_t host;
     network_to_host_16(&host, from);
     return host;
 }
 
-inline void host_to_network_32(void* dst, void* from) {
+inline void host_to_network_32(void* dst, const void* from) {
     uint32_t* host = (uint32_t*)(from);
     uint8_t* network = (uint8_t*)(dst);
 
@@ -69,7 +69,7 @@ inline std::string host_to_network_32(uint32_t host) {
     return network;
 }
 
-inline void network_to_host_32(void* dst, void* from) {
+inline void network_to_host_32(void* dst, const void* from) {
     uint32_t* host = (uint32_t*)(dst);
     uint8_t* network = (uint8_t*)(from);
 
@@ -77,13 +77,13 @@ inline void network_to_host_32(void* dst, void* from) {
             network[2] << 16 | network[3] << 24;
 }
 
-inline uint32_t network_to_host_32(void* from) {
+inline uint32_t network_to_host_32(const void* from) {
     uint32_t host;
     network_to_host_32(&host, from);
     return host;
 }
 
-inline void host_to_network_64(void* dst, void* from) {
+inline void host_to_network_64(void* dst, const void* from) {
     uint64_t* host = (uint64_t*)(from);
     uint8_t* network = (uint8_t*)(dst);
 
@@ -112,17 +112,17 @@ inline std::string host_to_network_64(uint64_t host) {
     return network;
 }
 
-inline void network_to_host_64(void* dst, void* from) {
+inline void network_to_host_64(void* dst, const void* from) {
     uint64_t* host = (uint64_t*)(dst);
     uint8_t* network = (uint8_t*)(from);
-
+    
     *host = uint64_t(network[0]) <<  0 | uint64_t(network[1]) <<  8 |
             uint64_t(network[2]) << 16 | uint64_t(network[3]) << 24 |
             uint64_t(network[4]) << 32 | uint64_t(network[5]) << 40 |
-            uint64_t(network[6]) << 48 | uint64_t(network[7]) << 56;
+            uint64_t(network[6]) << 48 | uint64_t(network[6]) << 56;
 }
 
-inline uint64_t network_to_host_64(void* from) {
+inline uint64_t network_to_host_64(const void* from) {
     uint64_t host;
     network_to_host_64(&host, from);
     return host;
