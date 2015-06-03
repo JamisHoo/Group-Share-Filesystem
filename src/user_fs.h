@@ -83,11 +83,12 @@ public:
 
         _dir_tree.initialize();
         _dir_tree.root()->type = DirTree::TreeNode::DIRECTORY;
-        
         // It seems there's is a portable way to get dir size, just set it to 0
         // If anybody knows how to do that, please tell me. Thanks.
         _dir_tree.root()->size = 0;
         _dir_tree.root()->host_id = _host_id;
+        _dir_tree.root()->mtime = last_write_time(dir);
+        _dir_tree.root()->num_links = hard_link_count(dir);
 
         std::function< void (const path&, const path&, const DirTree::TreeNode&) > traverseDirectory;
         traverseDirectory = [this, &traverseDirectory]
@@ -124,8 +125,6 @@ public:
                         treenode_type = DirTree::TreeNode::UNKNOWN;
                 }
                 
-                // TODO: maintain root directory hard link number
-                // TODO: add atime ctime mtime
 
                 if (treenode_type == DirTree::TreeNode::UNKNOWN)
                     continue;
@@ -136,6 +135,7 @@ public:
                     dirnode.type = DirTree::TreeNode::DIRECTORY;
                     dirnode.name = f.path().filename().string();
                     dirnode.size = 0;
+                    dirnode.mtime = last_write_time(f.path());
                     dirnode.host_id = _host_id;
                     dirnode.num_links = hard_link_count(f.path());
 
@@ -150,6 +150,7 @@ public:
                     filenode.type = DirTree::TreeNode::REGULAR;
                     filenode.name = f.path().filename().string();
                     filenode.size = file_size(f);
+                    filenode.mtime = last_write_time(f.path());
                     filenode.host_id = _host_id;
                     // GSFS create another hard link for files except directory
                     filenode.num_links = 1 + hard_link_count(f.path());
