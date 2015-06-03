@@ -104,7 +104,6 @@ public:
     // a packet has been read, pass it to owner
     void read(const Packet& packet) const;
 
-    // TODO disconnect
     // connect master failed, or connection interrupted
     void disconnect() const;
     

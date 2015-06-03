@@ -279,8 +279,6 @@ public:
             boost::unique_lock< boost::shared_mutex > lock(_access);
             _dir_tree.removeNotOf(_host_id);
         }
-
-        // TODO: stop tcp read
     }
 
 
