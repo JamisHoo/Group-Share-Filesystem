@@ -215,7 +215,32 @@ public:
         return _dir_tree.find(path);
     }
 
-    // functions for slaves' tcp manager:
+    // send update packet to all slaves
+    void sendUpdate() {
+        std::string dir_tree_seq;
+        std::string hosts_seq;
+
+        {
+            boost::shared_lock< boost::shared_mutex > lock(_access);
+            dir_tree_seq = DirTree::serialize(_dir_tree);
+            hosts_seq = Hosts::serialize(_hosts);
+        }
+
+        sendUpdate(dir_tree_seq, hosts_seq);
+    }
+
+    void sendUpdate(const std::string& dir_tree_seq, const std::string& hosts_seq) {
+        std::string message = host_to_network_64(0x02);
+        message += host_to_network_64(dir_tree_seq.length());
+        message += dir_tree_seq;
+        message += host_to_network_64(hosts_seq.length());
+        message += hosts_seq;
+
+        // send to all slaves
+        _tcp_manager.write(message);
+    }
+
+    // Callback Functions for slaves' tcp manager:
 
     // slave get recognized from master
     void slaveRecognized(const uint64_t slave_id, const std::string& dir_tree_seq, const std::string& hosts_seq) {
@@ -248,11 +273,40 @@ public:
     }
 
 
-    // TODO: how to handle disconnection?
-    // void disconnect() { }
+    // connect failed or slave disconnect from master
+    void disconnect() {
+        std::cerr << "From slave: disconnected from master. " << std::endl;
+
+        // clear dir tree
+        { 
+            boost::unique_lock< boost::shared_mutex > lock(_access);
+            _dir_tree.removeNotOf(_host_id);
+        }
+
+        // TODO: stop tcp read
+    }
 
 
-    // functions for master' tcp manager:
+    // Callback Functions for master' tcp manager:
+
+    // slave disconnect from master
+    void disconnect(const TCPMasterMessager::Connection::iterator handle) {
+        std::cerr << "From master: slave " << std::get<4>(*handle) << " disconnected. " << std::endl;
+
+        uint64_t& slave_id = std::get<4>(*handle);
+
+        // slave is initializting
+        if (slave_id == 0) return;
+
+        // remove this slave's node in dir tree
+        {
+            boost::unique_lock< boost::shared_mutex > lock(_access);
+            _dir_tree.removeOf(slave_id);
+        }
+
+        slave_id = 0;
+        sendUpdate();
+    }
 
     // new slave coming, chekc dirtree, allocate host_id, merge dir_tree and hosts
     void newConnection(const std::string& dir_tree_seq, 
@@ -277,6 +331,8 @@ public:
         // alloc slave id
         uint64_t slave_id = _max_host_id++;
         slave_host.id = slave_id;
+
+        std::get<4>(*handle) = slave_id;
         
         {
             boost::unique_lock< boost::shared_mutex > lock(_access); 
@@ -316,29 +372,7 @@ public:
         sendUpdate(merged_dir_tree_seq, merged_hosts_seq);
     }
 
-    // send update packet to all slaves
-    void sendUpdate() {
-        std::string dir_tree_seq;
-        std::string hosts_seq;
-
-        {
-            boost::shared_lock< boost::shared_mutex > lock(_access);
-            dir_tree_seq = DirTree::serialize(_dir_tree);
-            hosts_seq = Hosts::serialize(_hosts);
-        }
-
-        sendUpdate(dir_tree_seq, hosts_seq);
-    }
-    void sendUpdate(const std::string& dir_tree_seq, const std::string& hosts_seq) {
-        std::string message = host_to_network_64(0x02);
-        message += host_to_network_64(dir_tree_seq.length());
-        message += dir_tree_seq;
-        message += host_to_network_64(hosts_seq.length());
-        message += hosts_seq;
-
-        // send to all slaves
-        _tcp_manager.write(message);
-    }
+    
 
 private:
     

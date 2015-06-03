@@ -17,7 +17,11 @@
 #include "user_fs.h"
 
 void TCPManager::disconnect() const {
-    std::cout << "Disconnected. " << std::endl;
+    _owner->disconnect();
+}
+
+void TCPManager::disconnect(TCPMasterMessager::Connection::iterator handle) const {
+    _owner->disconnect(handle);
 }
 
 // messager will call back this function when receiving a packet

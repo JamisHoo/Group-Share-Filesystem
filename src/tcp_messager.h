@@ -80,6 +80,13 @@ public:
         _io_service.run();
     }
 
+    void stop() {
+        _io_service.post(
+        [this]() {
+            _io_service.stop();
+        });
+    }
+
     // send packet to master
     // packet can be released when this function returns
     void write(const Packet& packet) {
@@ -180,7 +187,9 @@ public:
                    // receive packet of this connection
                    Packet, 
                    // sending queue of this connection
-                   std::queue< std::shared_ptr<Packet> > 
+                   std::queue< std::shared_ptr<Packet> >,
+                   // slave id
+                   uint64_t
                   > > Connection;
 
     TCPMasterMessager(TCPManager* owner): 
@@ -211,6 +220,13 @@ public:
         _io_service.run();
     }
 
+    void stop() {
+        _io_service.post(
+        [this]() {
+            _io_service.stop();
+        });
+    }
+
     // send packet to all slaves
     // packet can be released when this function returns
     void write(const Packet& packet) {
@@ -220,7 +236,11 @@ public:
             std::shared_ptr<Packet> pointer(new Packet(packet));
             
             for (auto connect_iter = _connections.begin(); connect_iter != _connections.end(); ++connect_iter) {
+                boost::asio::ip::tcp::socket& socket = std::get<0>(*connect_iter);
                 std::queue< std::shared_ptr<Packet> >& queue = std::get<3>(*connect_iter);
+
+                if (!socket.is_open()) continue;
+                
                 bool write_in_progress = queue.size();
                 queue.push(pointer);
                 if (!write_in_progress)
@@ -235,7 +255,15 @@ public:
         [this, packet, iter]() {
             std::shared_ptr<Packet> pointer(new Packet(packet));
 
+            boost::asio::ip::tcp::socket& socket = std::get<0>(*iter);
             std::queue< std::shared_ptr<Packet> >& queue = std::get<3>(*iter);
+            
+            // DEBUG
+            if (!socket.is_open())
+                std::cerr << "Writing to a closed socket. ";
+
+            assert(socket.is_open());
+
             bool write_in_progress = queue.size();
             queue.push(pointer);
             if (!write_in_progress)
@@ -251,16 +279,27 @@ public:
         boost::asio::ip::tcp::socket& socket = std::get<0>(*connect_iter);
 
 
-        boost::system::error_code ec;
-        socket.close(ec);
+        if (socket.is_open()) {
+            boost::system::error_code ec;
+            socket.close(ec);
+
+            // clear sending queue
+            std::queue< std::shared_ptr<Packet> >& queue = std::get<3>(*connect_iter);
+            std::queue< std::shared_ptr<Packet> > empty_queue;
+            queue.swap(empty_queue);
         
-        // if erase this element from list,
-        // there's one scenario that the iterator is erased more than once 
-        // because this function maybe interrupted by async I/O
-        // _connections.erase(connect_iter);
+            // if erase this element from list,
+            // there's one scenario that the iterator is erased more than once 
+            // because this function maybe interrupted by async I/O
+            // _connections.erase(connect_iter);
+
+            disconnect(connect_iter);
+        }
     }
 
 private:
+    void disconnect(Connection::iterator iter) const;
+
     void do_accept() {
         _acceptor.async_accept(_socket, 
         [this](boost::system::error_code ec) {
@@ -268,7 +307,8 @@ private:
                 _connections.push_front({ std::move(_socket), 
                                           std::vector<char>(), 
                                           Packet(), 
-                                          std::queue< std::shared_ptr<Packet> >() });
+                                          std::queue< std::shared_ptr<Packet> >(),
+                                          0 });
 
                 Connection::iterator connect_iter = _connections.begin();
 

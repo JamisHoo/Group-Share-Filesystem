@@ -26,3 +26,7 @@ void TCPMasterMessager::read(const Packet& packet, Connection::iterator iter) co
 void TCPSlaveMessager::disconnect() const {
     _owner->disconnect();
 }
+
+void TCPMasterMessager::disconnect(Connection::iterator iter) const {
+    _owner->disconnect(iter);
+}

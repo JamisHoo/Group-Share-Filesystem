@@ -24,8 +24,11 @@ public:
         _is_master(0), _is_slave(0), 
         _master_messager(nullptr), _slave_messager(nullptr), _owner(owner) { }
     ~TCPManager() { 
-        if (_thread.joinable()) 
-            _thread.join(); 
+        if (_master_messager) _master_messager->stop();
+        if (_slave_messager) _slave_messager->stop();
+
+        if (_thread.joinable()) _thread.join(); 
+            
         delete _master_messager;
         delete _slave_messager;
     }
@@ -74,14 +77,6 @@ public:
             _slave_messager->write(packet);
     }
 
-
-    // functions for slaves 
-
-    // messager will call back this function when receiving a packet
-    // packet size should just fit in with the protocol
-    void read(const Packet& packet);
-
-
     // write to peer
     void writeTo(const std::string& message, const TCPMasterMessager::Connection::iterator handle) {
         assert(_is_master);
@@ -92,37 +87,36 @@ public:
         _master_messager->writeTo(packet, handle);
     }
 
+    // close connection with one slave
+    void close(const TCPMasterMessager::Connection::iterator handle) {
+        _master_messager->close(handle);
+    }
+
+    
+    
+    // Callback Functions for slaves below:
+
+    // messager will call back this function when receiving a packet
+    // packet size should just fit in with the protocol
+    void read(const Packet& packet);
+
+    // connect failed or slave disconnect from master
+    void disconnect() const;
 
 
-    // functions for master
+
+    // Callback Functions for master below:
 
     // messager will call back this function when receiving a packet
     // packet size should just fit in with the protocol
     void read(const Packet& packet, const TCPMasterMessager::Connection::iterator handle);
 
 
-    // close connection with one slave
-    void close(const TCPMasterMessager::Connection::iterator handle) {
-        _master_messager->close(handle);
-    }
+    // slave disconnect from master
+    void disconnect(const TCPMasterMessager::Connection::iterator handle) const;
 
 
 
-    /*
-       For slaves,
-       if fail when trying to connect or connection is interrupted
-       the tcp thread will return.
-       Then try inform the ssh thread to stop and then main thresd will return.
-
-       For master,
-       remove this slave from hosts and dir tree,
-       then inform other slaves to update hosts and dir tree.
-    */
-
-    // TODO: how to handle disconnect?
-    // disconnetion callback for slave
-    // connect failed or slave disconnect from master
-    void disconnect() const;
 
     // disconnection callback for master
     // slave disconnect from master

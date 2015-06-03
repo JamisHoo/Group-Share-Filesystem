@@ -21,9 +21,9 @@ int main(int argc, char** argv) {
     if (std::string(argv[1]) == "client1")
         mount_point = "test2";
     else if (std::string(argv[1]) == "server")
-        mount_point = "test1", is_master = 1;
+        mount_point = "test", is_master = 1;
     else if (std::string(argv[1]) == "client")
-        mount_point = "test";
+        mount_point = "test1";
     else {
         std::cout << "./" << argv[0] << " [ client | server ]. \n";
         return 1;

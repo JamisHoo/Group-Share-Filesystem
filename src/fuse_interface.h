@@ -33,6 +33,7 @@ public:
         _gsfs_oper.readdir = FUSEInterface::readdir;
         _gsfs_oper.open = FUSEInterface::open;
         _gsfs_oper.read = FUSEInterface::read;
+        _gsfs_oper.destroy = FUSEInterface::destroy;
         _user_fs = userfs;
     }
 
@@ -109,6 +110,10 @@ public:
             buf[i] = i;
 
         return read_size;
+    }
+
+    static void destroy(void*) {
+        _user_fs = nullptr;
     }
 
     static fuse_operations* get() {
