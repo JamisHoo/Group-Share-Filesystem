@@ -59,13 +59,12 @@ public:
         _hosts.push(host);
     }
 
+    // this function may throw exceptions
     void initDirTree(const std::string& dir, const std::string& tmpdir) {
         using namespace boost::filesystem;
 
         boost::unique_lock< boost::shared_mutex > lock(_access);
 
-        // TODO: may throw filesystem_error
-        
         if (!is_directory(dir))
             throw std::invalid_argument(dir + " is not directory. ");
         
