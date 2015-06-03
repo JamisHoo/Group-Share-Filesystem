@@ -3,14 +3,14 @@
  *  Distributed under the MIT license 
  *  (See accompanying file LICENSE or copy at http://opensource.org/licenses/MIT)
  *  
- *  Project: 
+ *  Project: Group-Share Filesystem
  *  Filename: bytes_order.h 
  *  Version: 1.0
  *  Author: Jamis Hoo
  *  E-mail: hoojamis@gmail.com
  *  Date: Jun  1, 2015
  *  Time: 23:25:19
- *  Description: 
+ *  Description: functions to convert number between host order and network order
  *****************************************************************************/
 #ifndef BYTES_ORDER_H_
 #define BYTES_ORDER_H_
