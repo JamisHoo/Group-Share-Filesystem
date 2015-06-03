@@ -55,7 +55,6 @@ public:
     public:
         bool operator<(const TreeNode& node) const { return name < node.name; }
         
-        // TODO: maybe more types?
         enum FileType { REGULAR, DIRECTORY, CHRDEVICE, BLKDEVICE, FIFO, SYMLINK, SOCKET, UNKNOWN };
 
         // TODO: maybe more attributes
