@@ -66,7 +66,8 @@ public:
         std::string address;
         std::string tmpdir;
         uint16_t tcp_port;
-        // TODO: is tcp port necessary?
+        // TCP port isn't used for now
+        // But it's may be used later when adding features such as recover from disconnection 
         uint16_t ssh_port;
         // TODO: authentication information
     };
