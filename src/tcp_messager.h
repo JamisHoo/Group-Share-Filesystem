@@ -3,7 +3,7 @@
  *  Distributed under the MIT license 
  *  (See accompanying file LICENSE or copy at http://opensource.org/licenses/MIT)
  *  
- *  Project: Group-Sharing Filesystem
+ *  Project: Group-Share Filesystem
  *  Filename: tcp_messager.h 
  *  Version: 1.0
  *  Author: Jamis Hoo
