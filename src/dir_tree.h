@@ -57,7 +57,6 @@ public:
         
         enum FileType { REGULAR, DIRECTORY, CHRDEVICE, BLKDEVICE, FIFO, SYMLINK, SOCKET, UNKNOWN };
 
-        // TODO: maybe more attributes
         // file type
         FileType type;
         // file size
