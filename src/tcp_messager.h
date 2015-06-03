@@ -257,12 +257,6 @@ public:
             boost::asio::ip::tcp::socket& socket = std::get<0>(*iter);
             std::queue< std::shared_ptr<Packet> >& queue = std::get<3>(*iter);
             
-            // DEBUG
-            if (!socket.is_open())
-                std::cerr << "Writing to a closed socket. ";
-
-            assert(socket.is_open());
-
             bool write_in_progress = queue.size();
             queue.push(pointer);
             if (!write_in_progress)
