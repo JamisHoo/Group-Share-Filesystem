@@ -28,14 +28,11 @@ class UserFS {
 public:
     UserFS(): _host_id(0), _max_host_id(2), _slave_wait_sem(0), _tcp_manager(this) { }
     ~UserFS() {
-        // TODO: when to remove tmp dir?
-        /*
         using namespace boost::filesystem;
         // if delete failed, just ignore it
         try {
             remove_all(path(_tmpdir) / path(_dir));
         } catch (...) { }
-        */
     }
 
     // calling order of functions below:
@@ -84,7 +81,7 @@ public:
         if (!create_directory(tmpdir / dir))
             throw std::invalid_argument(std::string("Failed creating directory ") + path(tmpdir / dir).string() + ".");
         
-        _tmpdir = tmpdir;
+        _tmpdir = absolute(tmpdir).string();
         _dir = dir;
 
         _dir_tree.initialize();
@@ -97,7 +94,7 @@ public:
 
         std::function< void (const path&, const path&, const DirTree::TreeNode&) > traverseDirectory;
         traverseDirectory = [this, &traverseDirectory]
-            (const path& dir, const path& tmpdir, const DirTree::TreeNode& parent)->void {
+            (const path& dir, const path& _tmpdir, const DirTree::TreeNode& parent)->void {
             for (auto& f: directory_iterator(dir)) {
                 auto file_type = status(f).type();
 
@@ -136,7 +133,7 @@ public:
                 if (treenode_type == DirTree::TreeNode::UNKNOWN)
                     continue;
                 else if (treenode_type == DirTree::TreeNode::DIRECTORY) {
-                    create_directory(tmpdir / f);
+                    create_directory(_tmpdir / f.path());
 
                     DirTree::TreeNode dirnode;
                     dirnode.type = DirTree::TreeNode::DIRECTORY;
@@ -147,10 +144,10 @@ public:
 
                     auto insert_rtv = parent.children.insert(dirnode);
 
-                    traverseDirectory(f, tmpdir, *(insert_rtv.first));
+                    traverseDirectory(f, _tmpdir, *(insert_rtv.first));
                 } else {
                     // create hard link (src, dst)
-                    create_hard_link(f, tmpdir / f);
+                    create_hard_link(f, _tmpdir / f.path());
 
                     DirTree::TreeNode filenode;
                     filenode.type = DirTree::TreeNode::REGULAR;
@@ -165,7 +162,7 @@ public:
             }
         };
 
-        traverseDirectory(dir, tmpdir, *_dir_tree.root());
+        traverseDirectory(_dir, _tmpdir, *_dir_tree.root());
     }
 
     // returns true on error
