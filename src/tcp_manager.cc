@@ -27,8 +27,6 @@ void TCPManager::disconnect(TCPMasterMessager::Connection::iterator handle) cons
 // messager will call back this function when receiving a packet
 // packet size should just fit in with the protocol
 void TCPManager::read(const Packet& packet, const TCPMasterMessager::Connection::iterator handle) {
-    assert(_is_master);
-
     /* 
        protocol:
        
@@ -86,8 +84,6 @@ void TCPManager::read(const Packet& packet, const TCPMasterMessager::Connection:
 
 
 void TCPManager::read(const Packet& packet) {
-    assert(_is_slave);
-    
     const char* data = packet.data();
 
     uint64_t protocol_type = network_to_host_64(data);

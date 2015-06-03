@@ -79,7 +79,6 @@ public:
 
     // write to peer
     void writeTo(const std::string& message, const TCPMasterMessager::Connection::iterator handle) {
-        assert(_is_master);
         // construct packet
         Packet packet;
         packet.encodeData(message);

@@ -45,8 +45,6 @@ public:
         boost::unique_lock< boost::shared_mutex > lock(_access);
 
         // this functions should only be called when program initializes
-        assert(_hosts.size() == 0);
-        assert(_host_id == 0 || _host_id == 1);
         
         Hosts::Host host;
         host.id = _host_id;
@@ -336,8 +334,6 @@ public:
            
             // merge host 
             _hosts.push(slave_host);
-
-            assert(_hosts.size() == slave_id + 1);
         }
 
 
