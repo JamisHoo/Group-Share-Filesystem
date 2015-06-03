@@ -93,9 +93,9 @@ public:
 
     // remove all nodes of a certain host
     void removeOf(const uint64_t host_id) {
-        for (auto ite = tree.root()->children.begin(); ite != tree.root()->children.end();)
+        for (auto ite = _root->children.begin(); ite != _root->children.end();)
             if (ite->host_id == host_id) 
-                tree.root()->children.erase(ite++);
+                _root->children.erase(ite++);
             else 
                 ++ite;
     }
