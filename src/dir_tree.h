@@ -74,7 +74,7 @@ public:
         // time of last status change
         size_t ctime;
         // this tree node belongs to which host
-        size_t host_id;
+        uint64_t host_id;
         // number of hard links
         size_t num_links;
         
@@ -90,6 +90,15 @@ public:
 
     void initialize() { _root = new TreeNode; }
     TreeNode* root() const { return _root; }
+
+    // remove all nodes of a certain host
+    void removeOf(const uint64_t host_id) {
+        for (auto ite = tree.root()->children.begin(); ite != tree.root()->children.end();)
+            if (ite->host_id == host_id) 
+                tree.root()->children.erase(ite++);
+            else 
+                ++ite;
+    }
 
     std::vector<std::string> hasConflict(const DirTree& tree) const {
         std::vector<std::string> conflicts;
