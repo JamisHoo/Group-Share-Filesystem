@@ -100,6 +100,15 @@ public:
                 ++ite;
     }
 
+    // remove all nodes but those of a certain node
+    void removeNotOf(const uint64_t host_id) {
+        for (auto ite = _root->children.begin(); ite != _root->children.end();)
+            if (ite->host_id != host_id)
+                _root->children.erase(ite++);
+            else 
+                ++ite;
+    }
+
     std::vector<std::string> hasConflict(const DirTree& tree) const {
         std::vector<std::string> conflicts;
 
