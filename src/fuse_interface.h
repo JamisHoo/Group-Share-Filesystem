@@ -46,19 +46,27 @@ public:
         // not found
         if (!node) return -ENOENT;
         
-        // TODO: support more file types and hard link
-        
         if (node->type == DirTree::TreeNode::REGULAR) {
             stbuf->st_mode = S_IFREG | 0444;
-            stbuf->st_nlink = 1;
-            stbuf->st_size = node->size;
         } else if (node->type == DirTree::TreeNode::DIRECTORY) {
             stbuf->st_mode = S_IFDIR | 0755;
-            stbuf->st_nlink = 2;
+        } else if (node->type == DirTree::TreeNode::SYMLINK) {
+            stbuf->st_mode = S_IFLNK | 0444;
+        } else if (node->type == DirTree::TreeNode::CHRDEVICE) {
+            stbuf->st_mode = S_IFCHR | 0444;
+        } else if (node->type == DirTree:: TreeNode::BLKDEVICE) {
+            stbuf->st_mode = S_IFBLK | 0444;
+        } else if (node->type == DirTree::TreeNode::FIFO) {
+            stbuf->st_mode = S_IFIFO | 0444;
+        } else if (node->type == DirTree::TreeNode::SOCKET) {
+            stbuf->st_mode = S_IFSOCK | 0444;
         } else {
             std::cerr << "read path error at " << path << "." << std::endl;
             return -ENOENT;
         }
+        stbuf->st_nlink = node->num_links;
+        stbuf->st_size = node->size;
+        stbuf->st_mtime = node->mtime;
 
         return 0;
     }

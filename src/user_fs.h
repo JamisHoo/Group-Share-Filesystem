@@ -94,7 +94,7 @@ public:
         traverseDirectory = [this, &traverseDirectory]
             (const path& dir, const path& _tmpdir, const DirTree::TreeNode& parent)->void {
             for (auto& f: directory_iterator(dir)) {
-                auto file_type = status(f).type();
+                auto file_type = symlink_status(f).type();
 
                 decltype(DirTree::TreeNode::type) treenode_type;
 
@@ -132,7 +132,7 @@ public:
                     create_directory(_tmpdir / f.path());
 
                     DirTree::TreeNode dirnode;
-                    dirnode.type = DirTree::TreeNode::DIRECTORY;
+                    dirnode.type = treenode_type;
                     dirnode.name = f.path().filename().string();
                     dirnode.size = 0;
                     dirnode.mtime = last_write_time(f.path());
@@ -147,7 +147,7 @@ public:
                     create_hard_link(f, _tmpdir / f.path());
 
                     DirTree::TreeNode filenode;
-                    filenode.type = DirTree::TreeNode::REGULAR;
+                    filenode.type = treenode_type;
                     filenode.name = f.path().filename().string();
                     filenode.size = file_size(f);
                     filenode.mtime = last_write_time(f.path());
