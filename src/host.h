@@ -35,6 +35,7 @@ public:
         void serialize(Archive& ar, const unsigned int /* version */) {
             ar & id;
             ar & address;
+            ar & mountdir;
             ar & tmpdir;
             ar & tcp_port;
             ar & ssh_port;
@@ -64,6 +65,9 @@ public:
 
         uint64_t id;
         std::string address;
+        // mount dir
+        std::string mountdir;
+        // tmp dir for hard links
         std::string tmpdir;
         uint16_t tcp_port;
         // TCP port isn't used for now

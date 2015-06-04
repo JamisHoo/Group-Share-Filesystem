@@ -113,11 +113,12 @@ public:
         if (read_offset + read_size > file_size)
             read_size = file_size - read_offset;
         
-        // TODO: read file from remote host
-        for (size_t i = 0; i < read_size; ++i)
-            buf[i] = i;
+        intmax_t bytes_read = _user_fs->read(node->host_id, path, offset, size, buf);
 
-        return read_size;
+        if (bytes_read < 0) return -EIO;
+
+        return bytes_read;
+
     }
 
     static void destroy(void*) {

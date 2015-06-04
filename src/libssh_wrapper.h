@@ -28,7 +28,6 @@ public:
     
     ~SSHSession() {
         if (_ssh_session) disconnect();
-        sftp_free(_sftp_session);
         ssh_free(_ssh_session);
     }
 
@@ -36,11 +35,6 @@ public:
     int initialize() {
         _ssh_session = ssh_new();
         if (!_ssh_session) return 1;
-        
-        _sftp_session = sftp_new(_ssh_session);
-        if (!_sftp_session) return 1;
-
-        if (sftp_init(_sftp_session) != SSH_OK) return 1;
 
         return 0;
     }
@@ -48,11 +42,15 @@ public:
     int connect() {
         if (ssh_connect(_ssh_session) == SSH_OK) return 0;
         if (authPublickey()) { disconnect(); return 1; }
+        _sftp_session = sftp_new(_ssh_session);
+        if (sftp_init(_sftp_session) != SSH_OK) return 1;
+        if (!_sftp_session) return 1;
         return 1;
     }
 
     int disconnect() {
         if (close_file()) return 1;
+        sftp_free(_sftp_session);
         ssh_disconnect(_ssh_session);
         return 0;
     }

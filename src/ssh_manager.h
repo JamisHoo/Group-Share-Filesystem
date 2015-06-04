@@ -20,9 +20,15 @@
 
 
 class SSHManager {
+public:
     ~SSHManager() {
         for (auto i: _connections)
             delete i.second;
+    }
+
+    // returns true if found
+    bool findHost(const uint64_t id) const {
+        return _connections.find(id) != _connections.end();
     }
 
     int insertHost(const uint64_t id, const std::string& addr, const uint16_t port) {
@@ -44,7 +50,7 @@ class SSHManager {
     }
 
     intmax_t read(const uint64_t id, const std::string& path, const size_t offset,
-                  const size_t size, char* buff) {
+                  const size_t size, char* buff) const {
         auto ite = _connections.find(id);
         if (ite == _connections.end()) return -1;
 

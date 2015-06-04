@@ -15,6 +15,7 @@
 #ifndef USER_FS_H_
 #define USER_FS_H_
 
+#include <fstream>
 #include <stdexcept>
 #include <boost/filesystem.hpp>
 #include <boost/thread/shared_mutex.hpp>
@@ -23,6 +24,7 @@
 #include "dir_tree.h"
 #include "host.h"
 #include "tcp_manager.h"
+#include "ssh_manager.h"
 
 class UserFS {
 public:
@@ -49,6 +51,7 @@ public:
         Hosts::Host host;
         host.id = _host_id;
         host.address = addr;
+        host.mountdir = _dir;
         host.tmpdir = _tmpdir;
         host.tcp_port = tcp_port;
         host.ssh_port = ssh_port;
@@ -203,11 +206,38 @@ public:
         return 0;
     }
 
-    size_t hostID() const { return _host_id; }
-
     const DirTree::TreeNode* find(const std::string& path) {
         boost::shared_lock< boost::shared_mutex > lock(_access);
         return _dir_tree.find(path);
+    }
+
+    // returns num of bytes read on success
+    // returns < 0 on error
+    intmax_t read(const uint64_t node_id, const std::string path, 
+                  const size_t offset, const size_t size, char* buff) {
+        // remote node isn't inserted into ssh manager
+        if (!_ssh_manager.findHost(node_id)) {
+            _ssh_manager.insertHost(node_id, _hosts[node_id].address, _hosts[node_id].ssh_port);
+        }
+        
+        boost::filesystem::path remote_path = _hosts[node_id].tmpdir;
+        remote_path /= _hosts[node_id].mountdir;
+        remote_path /= path;
+
+        std::string remote_path_string = remote_path.string();
+
+        // read local file
+        if (node_id == _host_id) {
+            std::ifstream fin(remote_path_string);
+            fin.seekg(offset);
+            fin.read(buff, size);
+            if (fin.fail() || fin.bad()) return -1;
+            size_t bytes_read = fin.gcount();
+            return bytes_read;
+        }
+
+        // read remote file
+        return _ssh_manager.read(node_id, remote_path_string, offset, size, buff);
     }
 
     // send update packet to all slaves
@@ -363,7 +393,7 @@ public:
         sendUpdate(merged_dir_tree_seq, merged_hosts_seq);
     }
 
-    
+    size_t hostID() const { return _host_id; }
 
 private:
     
@@ -388,6 +418,7 @@ private:
 
     TCPManager _tcp_manager;
 
+    SSHManager _ssh_manager;
 };
 
 
