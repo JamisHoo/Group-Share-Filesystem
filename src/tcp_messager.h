@@ -10,13 +10,13 @@
  *  E-mail: hoojamis@gmail.com
  *  Date: Jun  1, 2015
  *  Time: 10:41:50
- *  Description: 
+ *  Description: messager is used to pass message between two peers
  *****************************************************************************/
 #ifndef TCP_MESSAGER_H_
 #define TCP_MESSAGER_H_
 
+// DEBUG
 #include <iostream>
-#include <string>
 #include <queue>
 #include <list>
 #include <boost/asio.hpp>
@@ -24,7 +24,6 @@
 
 class TCPManager;
 class UserFS;
-
 
 class Packet {
     // sending packet:
@@ -40,19 +39,14 @@ public:
 
     void encodeData(const std::string& data) {
         _size = data.length();
-
         _data = host_to_network_64(_size);
-
         _size += sizeof(_size);
-
         _data += data;
     }
 
     void decodeSize(const char* size) {
         _size = network_to_host_64(size);
     }
-
-    //void setData(const std::string& data) { _data = data; }
 
     void setData(const char* data) { _data.assign(data, _size); }
 
@@ -67,39 +61,16 @@ public:
         _socket(_io_service), _resolver(_io_service), _owner(owner) { }
 
     // returns true on error
-    bool init(const std::string& addr, const uint16_t port) {
-        boost::system::error_code ec;
-        _endpoint_iterator = _resolver.resolve({ addr, std::to_string(port) }, ec);
-
-        return ec;
-    }
+    bool init(const std::string& addr, const uint16_t port);
 
     // thread call this function will do connect, read, and write
-    void start() {
-        do_connect(_endpoint_iterator);
-        _io_service.run();
-    }
+    void start();
 
-    void stop() {
-        _io_service.post(
-        [this]() {
-            _io_service.stop();
-        });
-    }
+    void stop();
 
     // send packet to master
     // packet can be released when this function returns
-    void write(const Packet& packet) {
-        _io_service.post(
-        [this, packet]() {
-            bool write_in_progress = _write_packets.size();
-
-            _write_packets.push(packet);
-
-            if (!write_in_progress) 
-                do_write();
-        });
-    }
+    void write(const Packet& packet);
     
     // a packet has been read, pass it to owner
     void read(const Packet& packet) const;
@@ -108,60 +79,10 @@ public:
     void disconnect() const;
     
 private:
-    void do_connect(boost::asio::ip::tcp::resolver::iterator endpoint_iterator) {
-        boost::asio::async_connect(_socket, endpoint_iterator, 
-        [this](boost::system::error_code ec, boost::asio::ip::tcp::resolver::iterator) {
-            if (!ec) do_read_header();
-            else disconnect();
-        });
-    }
-
-    void do_read_header() {
-        _buffer.resize(_packet.sizeLength());
-        boost::asio::async_read(_socket, 
-            boost::asio::buffer(_buffer.data(), _packet.sizeLength()),
-        [this](boost::system::error_code ec, std::size_t length) {
-            if (!ec && length == _packet.sizeLength()) {
-                _packet.decodeSize(_buffer.data());
-
-                do_read_body();
-            } else {
-                _socket.close();
-                disconnect();
-            }
-        });
-    }
-
-    void do_read_body() {
-        _buffer.resize(_packet.size());
-        boost::asio::async_read(_socket,
-            boost::asio::buffer(_buffer.data(), _packet.size()),
-        [this](boost::system::error_code ec, std::size_t length) {
-            if (!ec && length == _packet.size()) {
-                _packet.setData(_buffer.data());
-                read(_packet);
-                do_read_header();
-            } else {
-                _socket.close();
-                disconnect();
-            }
-        });
-    }
-
-    void do_write() {
-        boost::asio::async_write(_socket,
-            boost::asio::buffer(_write_packets.front().data(), 
-                                _write_packets.front().size()),
-        [this](boost::system::error_code ec, std::size_t length) {
-            if (!ec && length == _write_packets.front().size()) {
-                _write_packets.pop();
-                if (!_write_packets.empty()) do_write();
-            } else {
-                _socket.close();
-                disconnect();
-            }
-        });
-    }
+    void do_connect(boost::asio::ip::tcp::resolver::iterator endpoint_iterator);
+    void do_read_header();
+    void do_read_body();
+    void do_write();
 
 
     boost::asio::io_service _io_service;
@@ -195,197 +116,37 @@ public:
         _acceptor(_io_service), _socket(_io_service), _resolver(_io_service), _owner(owner) { }
 
     // returns true on error
-    bool init(const std::string& addr, const uint16_t port) {
-        boost::system::error_code ec;
-        _endpoint_iterator = _resolver.resolve({ addr, std::to_string(port) }, ec);
-
-        auto i = _endpoint_iterator;
-        if (i == boost::asio::ip::tcp::resolver::iterator())
-            return true;
-        if (++i != boost::asio::ip::tcp::resolver::iterator()) 
-            return true;
-
-        return ec;
-    }
+    bool init(const std::string& addr, const uint16_t port);
 
     // thread call this function will do accept, read and write
-    void start() {
-        _acceptor.open(_endpoint_iterator->endpoint().protocol());
-        _acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
-        _acceptor.bind(_endpoint_iterator->endpoint());
-        _acceptor.listen();
+    void start();
 
-        do_accept();
-        _io_service.run();
-    }
-
-    void stop() {
-        _io_service.post(
-        [this]() {
-            _io_service.stop();
-        });
-    }
+    void stop();
 
     // send packet to all slaves
     // packet can be released when this function returns
-    void write(const Packet& packet) {
+    void write(const Packet& packet);
 
-        _io_service.post(
-        [this, packet]() {
-            std::shared_ptr<Packet> pointer(new Packet(packet));
-            
-            for (auto connect_iter = _connections.begin(); connect_iter != _connections.end(); ++connect_iter) {
-                boost::asio::ip::tcp::socket& socket = std::get<0>(*connect_iter);
-                std::queue< std::shared_ptr<Packet> >& queue = std::get<3>(*connect_iter);
-
-                if (!socket.is_open()) continue;
-                
-                bool write_in_progress = queue.size();
-                queue.push(pointer);
-                if (!write_in_progress)
-                    do_write(connect_iter);
-            }
-        });
-    }
-
-    void writeTo(const Packet packet, const Connection::iterator iter) {
-
-        _io_service.post(
-        [this, packet, iter]() {
-            std::shared_ptr<Packet> pointer(new Packet(packet));
-
-            boost::asio::ip::tcp::socket& socket = std::get<0>(*iter);
-            std::queue< std::shared_ptr<Packet> >& queue = std::get<3>(*iter);
-            
-            bool write_in_progress = queue.size();
-            queue.push(pointer);
-            if (!write_in_progress)
-                do_write(iter);
-        });
-    }
+    void writeTo(const Packet packet, const Connection::iterator iter);
 
     // a pakcet has been read, send it to owner
     void read(const Packet& packet, Connection::iterator iter) const;
 
     // close connection with a slave
-    void close(Connection::iterator connect_iter) {
-        boost::asio::ip::tcp::socket& socket = std::get<0>(*connect_iter);
-
-
-        if (socket.is_open()) {
-            boost::system::error_code ec;
-            socket.close(ec);
-
-            // clear sending queue
-            std::queue< std::shared_ptr<Packet> >& queue = std::get<3>(*connect_iter);
-            std::queue< std::shared_ptr<Packet> > empty_queue;
-            queue.swap(empty_queue);
-        
-            // if erase this element from list,
-            // there's one scenario that the iterator is erased more than once 
-            // because this function maybe interrupted by async I/O
-            // _connections.erase(connect_iter);
-
-            disconnect(connect_iter);
-        }
-    }
+    void close(Connection::iterator connect_iter);
 
 private:
     void disconnect(Connection::iterator iter) const;
 
-    void do_accept() {
-        _acceptor.async_accept(_socket, 
-        [this](boost::system::error_code ec) {
-            if (!ec) {
-                _connections.push_front({ std::move(_socket), 
-                                          std::vector<char>(), 
-                                          Packet(), 
-                                          std::queue< std::shared_ptr<Packet> >(),
-                                          0 });
+    void do_accept();
 
-                Connection::iterator connect_iter = _connections.begin();
+    void do_new_connection(Connection::iterator connect_iter);
 
-                do_new_connection(connect_iter); 
-            }
-            do_accept();
-        });
-    }
-
-    void do_new_connection(Connection::iterator connect_iter) {
-        boost::asio::ip::tcp::socket& socket = std::get<0>(*connect_iter);
-        
-        std::cout << "New connection from " 
-                  << socket.remote_endpoint().address().to_string() << ":"
-                  << socket.remote_endpoint().port() << std::endl;
-        
-        do_read_header(connect_iter);
-    }
-
-    void do_read_header(Connection::iterator connect_iter) {
-        boost::asio::ip::tcp::socket& socket = std::get<0>(*connect_iter);
-        std::vector<char>& buffer = std::get<1>(*connect_iter);
-        Packet& packet = std::get<2>(*connect_iter);
-
-        buffer.resize(Packet::sizeLength());
-
-        boost::asio::async_read(socket, 
-            boost::asio::buffer(buffer.data(), Packet::sizeLength()),
-
-        [this, connect_iter, &socket, &buffer, &packet](boost::system::error_code ec, std::size_t length) {
-            if (!ec && length == Packet::sizeLength()) {
-                
-                packet.decodeSize(buffer.data());
-
-                do_read_body(connect_iter);
-            } else {
-                close(connect_iter);
-            }
-        });
-    }
+    void do_read_header(Connection::iterator connect_iter);
     
-    void do_read_body(Connection::iterator connect_iter) {
-        boost::asio::ip::tcp::socket& socket = std::get<0>(*connect_iter);
-        std::vector<char>& buffer = std::get<1>(*connect_iter);
-        Packet& packet = std::get<2>(*connect_iter);
+    void do_read_body(Connection::iterator connect_iter);
 
-        buffer.resize(packet.size());
-
-        boost::asio::async_read(socket,
-            boost::asio::buffer(buffer.data(), packet.size()),
-
-        [this, connect_iter, &socket, &buffer, &packet](boost::system::error_code ec, std::size_t length) {
-            if (!ec && length == packet.size()) {
-                packet.setData(buffer.data());
-
-                read(packet, connect_iter);
-
-                do_read_header(connect_iter);
-            } else {
-                close(connect_iter);
-            }
-        });
-    }
-
-    
-    void do_write(Connection::iterator connect_iter) {
-        boost::asio::ip::tcp::socket& socket = std::get<0>(*connect_iter);
-        std::queue< std::shared_ptr<Packet> >& send_queue = std::get<3>(*connect_iter);
-
-        boost::asio::async_write(socket,
-            boost::asio::buffer(send_queue.front()->data(), 
-                                send_queue.front()->size()),
-
-        [this, connect_iter, &socket, &send_queue](boost::system::error_code ec, std::size_t length) {
-            if (!ec && length == send_queue.front()->size()) {
-                send_queue.pop();
-                if (!send_queue.empty()) do_write(connect_iter);
-            } else {
-                close(connect_iter);
-            }
-        });
-    }
-
-    
+    void do_write(Connection::iterator connect_iter);
 
     boost::asio::io_service _io_service;
     boost::asio::ip::tcp::acceptor _acceptor; 

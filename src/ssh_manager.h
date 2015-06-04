@@ -10,7 +10,7 @@
  *  E-mail: hoojamis@gmail.com
  *  Date: Jun  4, 2015
  *  Time: 10:46:58
- *  Description: 
+ *  Description: Manage ssh connections
  *****************************************************************************/
 #ifndef SSH_MANAGER_H_
 #define SSH_MANAGER_H_

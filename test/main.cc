@@ -1,9 +1,8 @@
 #include <iostream>
+#include "../src/user_fs.h"
 #include "../src/fuse_interface.h"
 
 
-fuse_operations FUSEInterface::_gsfs_oper;
-UserFS* FUSEInterface::_user_fs = nullptr;
 
 int main(int argc, char** argv) {
     using namespace std;

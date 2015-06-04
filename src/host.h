@@ -10,13 +10,15 @@
  *  E-mail: hoojamis@gmail.com
  *  Date: May 29, 2015
  *  Time: 23:16:35
- *  Description: 
+ *  Description: Host describes a node in this system
+ *               Hosts is a set of Host
  *****************************************************************************/
 #ifndef HOST_H_
 #define HOST_H_
 
 #include <string>
 #include <vector>
+#include <sstream>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/serialization/vector.hpp>

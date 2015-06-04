@@ -10,7 +10,7 @@
  *  E-mail: hoojamis@gmail.com
  *  Date: May 30, 2015
  *  Time: 11:29:46
- *  Description: 
+ *  Description: Manage all tcp connections
  *****************************************************************************/
 #ifndef TCP_MANAGER_H_
 #define TCP_MANAGER_H_
@@ -113,9 +113,6 @@ public:
 
     // slave disconnect from master
     void disconnect(const TCPMasterMessager::Connection::iterator handle) const;
-
-
-
 
     // disconnection callback for master
     // slave disconnect from master
