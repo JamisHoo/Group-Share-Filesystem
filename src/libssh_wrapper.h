@@ -19,7 +19,6 @@
 #include <libssh/sftp.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <iostream>
 
 
 class SSHSession {
