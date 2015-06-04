@@ -52,7 +52,15 @@ public:
             ar & name;
             ar & children;
         }
+
     public:
+        void setHostID(const uint64_t host_id) const {
+            for (const auto& node: children) {
+                node.host_id = host_id;
+                node.setHostID(host_id);
+            }
+        }
+
         bool operator<(const TreeNode& node) const { return name < node.name; }
         
         enum FileType { REGULAR, DIRECTORY, CHRDEVICE, BLKDEVICE, FIFO, SYMLINK, SOCKET, UNKNOWN };
@@ -72,7 +80,7 @@ public:
         // time of last status change
         size_t ctime;
         // this tree node belongs to which host
-        uint64_t host_id;
+        mutable uint64_t host_id;
         // number of hard links
         size_t num_links;
         
@@ -129,11 +137,9 @@ public:
 
     // merge dirtree from host_id to self's dirtree
     // assert no conflicts
-    void merge(const DirTree& tree, const size_t host_id) {
-        for (auto treenode: tree.root()->children) {
-            treenode.host_id = host_id;
+    void merge(const DirTree& tree) {
+        for (auto treenode: tree.root()->children) 
             _root->children.insert(treenode);
-        }
     }
 
     const TreeNode* find(const std::string& path) const {
@@ -177,8 +183,9 @@ public:
         return tree;
     }
 
-
 private:
+
+
     TreeNode* _root;
 
 };

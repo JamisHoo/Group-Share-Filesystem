@@ -217,7 +217,8 @@ public:
                   const size_t offset, const size_t size, char* buff) {
         // remote node isn't inserted into ssh manager
         if (!_ssh_manager.findHost(node_id)) {
-            _ssh_manager.insertHost(node_id, _hosts[node_id].address, _hosts[node_id].ssh_port);
+            bool rtv = _ssh_manager.insertHost(node_id, _hosts[node_id].address, _hosts[node_id].ssh_port);
+            if (rtv) return -1;
         }
         
         boost::filesystem::path remote_path = _hosts[node_id].tmpdir;
@@ -300,8 +301,6 @@ public:
 
     // connect failed or slave disconnect from master
     void disconnect() {
-        std::cerr << "From slave: disconnected from master. " << std::endl;
-
         // clear dir tree
         { 
             boost::unique_lock< boost::shared_mutex > lock(_access);
@@ -314,8 +313,6 @@ public:
 
     // slave disconnect from master
     void disconnect(const TCPMasterMessager::Connection::iterator handle) {
-        std::cerr << "From master: slave " << std::get<4>(*handle) << " disconnected. " << std::endl;
-
         uint64_t& slave_id = std::get<4>(*handle);
 
         // slave is initializting
@@ -354,6 +351,7 @@ public:
         // alloc slave id
         uint64_t slave_id = _max_host_id++;
         slave_host.id = slave_id;
+        slave_dir_tree.root()->setHostID(slave_id);
 
         std::get<4>(*handle) = slave_id;
         
@@ -361,7 +359,7 @@ public:
             boost::unique_lock< boost::shared_mutex > lock(_access); 
 
             // merge dir tree
-            _dir_tree.merge(slave_dir_tree, slave_id);
+            _dir_tree.merge(slave_dir_tree);
            
             // merge host 
             _hosts.push(slave_host);

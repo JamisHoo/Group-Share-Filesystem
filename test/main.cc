@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
     UserFS fs;
     if (is_master) fs.setMaster();
     fs.initDirTree(mount_point, tmp_dir);
-    fs.initHost("127.0.0.1", 10000, 20);
+    fs.initHost("127.0.0.1", 10000, 22);
     fs.initTCPNetwork("127.0.0.1", 10000);
 
     FUSEInterface fuse;

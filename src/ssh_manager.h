@@ -32,17 +32,7 @@ public:
     }
 
     int insertHost(const uint64_t id, const std::string& addr, const uint16_t port) {
-        std::unique_ptr<SSHSession> ssh_session(new SSHSession);
-
-        if (ssh_session->initialize()) return 1;
-        if (ssh_session->setHost(addr)) return 1;
-        if (ssh_session->setPort(port)) return 1;
-        
-        SSHSession* pointer = ssh_session.release();
-
-        _connections.emplace(id, pointer);
-
-        return 0;
+        return !_connections.emplace(id, new SSHSession(addr, port)).second;
     }
 
     int removeHost(const uint64_t id) {
