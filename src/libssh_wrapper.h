@@ -65,7 +65,10 @@ public:
         return ssh_options_set(_ssh_session, SSH_OPTIONS_PORT, &port_);
     }
 
-    intmax_t read(const std::string& path, size_t offset, size_t size, char* buff) {
+    intmax_t read(const std::string& path, const size_t offset, const size_t size, char* buff) {
+        // not connected yet
+        if (!ssh_is_connected(_ssh_session) && connect()) return -1;
+
         // file not open yet
         if (_open_file != path || _file_is_open) {
             _open_file = path;
