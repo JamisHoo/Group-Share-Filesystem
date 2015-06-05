@@ -34,7 +34,7 @@ $(BUILDDIR)%.o : %.cc
 -include $(BUILDDIR)*.P
 
 gsfs: $(addprefix $(BUILDDIR),$(OBJECTS))
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $^ -o $@
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 
 .PHONY: clean
