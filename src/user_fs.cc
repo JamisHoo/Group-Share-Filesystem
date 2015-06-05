@@ -46,17 +46,17 @@
 
         boost::unique_lock< boost::shared_mutex > lock(_access);
 
-        if (!is_directory(dir))
-            throw std::invalid_argument(dir + " is not directory. ");
-        
         if (!exists(dir))
             throw std::invalid_argument(dir + " not exists. ");
-        
+
         if (!is_directory(dir))
             throw std::invalid_argument(dir + " is not directory. ");
-
+        
         if (exists(tmpdir / dir)) 
             throw std::invalid_argument(std::string("Assert ") + path(tmpdir / dir).string() + " not exists. ");
+
+        if (!is_directory(dir))
+            throw std::invalid_argument(dir + " is not directory. ");
 
         if (!create_directory(tmpdir / dir))
             throw std::invalid_argument(std::string("Failed creating directory ") + path(tmpdir / dir).string() + ".");
