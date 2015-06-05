@@ -14,19 +14,21 @@
  *****************************************************************************/
 
 #include <iostream>
-#include "../src/user_fs.h"
-#include "../src/fuse_interface.h"
+#include "option_parser.h"
+//#include "user_fs.h"
+//#include "fuse_interface.h"
 
 int main(int argc, char** argv) {
+    OptionParser parser;
+    parser.parse(argc, argv);
 
-
-
-
-
-
-
-
-
+    std::cout << "is_master: " << parser.is_master << "\n"
+              << "is_standby: " << parser.is_standby << "\n"
+              << "address: " << parser.address << "\n"
+              << "tcp port: " << parser.tcp_port << "\n"
+              << "ssh port: " << parser.ssh_port << "\n"
+              << "mount point: " << parser.mount_point << "\n"
+              << "tmp dir: " << parser.tmp_dir << "\n";
 
 
 }
