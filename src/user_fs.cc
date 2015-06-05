@@ -82,28 +82,28 @@ void UserFS::initDirTree(const std::string& dir, const std::string& tmpdir) {
             decltype(DirTree::TreeNode::type) treenode_type;
 
             switch (file_type) {
-                case file_type::directory_file: 
+                case boost::filesystem::file_type::directory_file: 
                     treenode_type = DirTree::TreeNode::DIRECTORY;
                     break;
-                case file_type::regular_file: 
+                case boost::filesystem::file_type::regular_file: 
                     treenode_type = DirTree::TreeNode::REGULAR;
                     break;
-                case file_type::character_file:
+                case boost::filesystem::file_type::character_file:
                     treenode_type = DirTree::TreeNode::CHRDEVICE;
                     break;
-                case file_type::block_file:
+                case boost::filesystem::file_type::block_file:
                     treenode_type = DirTree::TreeNode::BLKDEVICE;
                     break;
-                case file_type::fifo_file:
+                case boost::filesystem::file_type::fifo_file:
                     treenode_type = DirTree::TreeNode::FIFO;
                     break;
-                case file_type::symlink_file:
+                case boost::filesystem::file_type::symlink_file:
                     treenode_type = DirTree::TreeNode::SYMLINK;
                     break;
-                case file_type::socket_file:
+                case boost::filesystem::file_type::socket_file:
                     treenode_type = DirTree::TreeNode::SOCKET;
                     break;
-                case file_type::type_unknown:
+                case boost::filesystem::file_type::type_unknown:
                 default:
                     treenode_type = DirTree::TreeNode::UNKNOWN;
             }

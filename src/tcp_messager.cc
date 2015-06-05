@@ -218,11 +218,15 @@ void TCPSlaveMessager::do_write() {
         _acceptor.async_accept(_socket, 
         [this](boost::system::error_code ec) {
             if (!ec) {
-                _connections.push_front({ std::move(_socket), 
-                                          std::vector<char>(), 
-                                          Packet(), 
-                                          std::queue< std::shared_ptr<Packet> >(),
-                                          0 });
+                _connections.push_front(
+                    std::make_tuple(
+                                    std::move(_socket), 
+                                    std::vector<char>(), 
+                                    Packet(), 
+                                    std::queue< std::shared_ptr<Packet> >(),
+                                    0
+                                   )
+                                       );
 
                 Connection::iterator connect_iter = _connections.begin();
 
