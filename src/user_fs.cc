@@ -180,7 +180,6 @@ bool UserFS::initTCPNetwork(const std::string& addr, const uint16_t port) {
 
         _tcp_manager.write(message);
 
-        _main_thread_is_waiting = 1;
         _slave_wait_sem.wait();
     }
 

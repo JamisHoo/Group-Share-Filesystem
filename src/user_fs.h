@@ -27,7 +27,7 @@
 class UserFS {
 public:
     UserFS(): _host_id(0), _max_host_id(2), _slave_wait_sem(0), 
-              _main_thread_is_waiting(0), _tcp_manager(this) { }
+              _main_thread_is_waiting(1), _tcp_manager(this) { }
     ~UserFS() {
         using namespace boost::filesystem;
         // if delete failed, just ignore it
