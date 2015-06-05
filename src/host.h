@@ -37,8 +37,7 @@ public:
         void serialize(Archive& ar, const unsigned int /* version */) {
             ar & id;
             ar & address;
-            ar & mountdir;
-            ar & tmpdir;
+            ar & working_dir;
             ar & tcp_port;
             ar & ssh_port;
         }
@@ -67,15 +66,12 @@ public:
 
         uint64_t id;
         std::string address;
-        // mount dir
-        std::string mountdir;
-        // tmp dir for hard links
-        std::string tmpdir;
+        // working dir
+        std::string working_dir;
         uint16_t tcp_port;
         // TCP port isn't used for now
         // But it's may be used later when adding features such as recover from disconnection 
         uint16_t ssh_port;
-        // TODO: authentication information
     };
 
     size_t size() const { return _hosts.size(); }
