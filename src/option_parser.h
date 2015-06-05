@@ -23,7 +23,7 @@ struct OptionParser {
     OptionParser() { initialize(); }
 
     void initialize();
-    void parse(int, char**);
+    void parse(const int, char**);
 
 
     bool is_master;

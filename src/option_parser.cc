@@ -46,7 +46,7 @@ void OptionParser::initialize() {
     all_options.add(master_options).add(standby_options).add(generic_options);
 }
 
-void OptionParser::parse(int argc, char** argv) {
+void OptionParser::parse(const int argc, char** argv) {
     using namespace std;
     using namespace boost::program_options;
 
