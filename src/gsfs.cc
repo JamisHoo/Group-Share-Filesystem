@@ -19,8 +19,15 @@
 //#include "fuse_interface.h"
 
 int main(int argc, char** argv) {
+
+    // parser options
     OptionParser parser;
-    parser.parse(argc, argv);
+    try {
+        parser.parse(argc, argv);
+    } catch (std::exception& err) {
+        std::cerr << err.what() << std::endl;
+        return 1;
+    }
 
     std::cout << "is_master: " << parser.is_master << "\n"
               << "is_standby: " << parser.is_standby << "\n"
@@ -29,6 +36,34 @@ int main(int argc, char** argv) {
               << "ssh port: " << parser.ssh_port << "\n"
               << "mount point: " << parser.mount_point << "\n"
               << "tmp dir: " << parser.tmp_dir << "\n";
+
+    if (!is_master && !is_standby) return 0;
+
+    // init user fs
+    UserFS fs;
+    if (is_master) fs.setMaster();
+
+    // init dir tree
+    try {
+        fs.initDirTree(parser.mount_point, parser.tmp_dir);
+    } catch (std::exception& err) {
+        std::cerr << err.what() << std::endl;
+        return 1;
+    }
+
+    // init host
+    fs.initHost(parser.address, parser.tcp_port, parser.ssh_port);
+
+    // init tcp network
+    if (fs.initTCPNetwork(parser.address, parser.tcp_port)) {
+        std::cerr << "Error when initializing TCP network. " << std::endl;
+        return 1;
+    }
+
+    // init fuse interface
+    FUSEInterface fuse;
+    fuse.initialize(&fs);
+
 
 
 }

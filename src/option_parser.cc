@@ -51,60 +51,65 @@ void OptionParser::parse(int argc, char** argv) {
 
     is_master = is_standby = 0;
 
-    try {
-        store(parse_command_line(argc, argv, all_options), vm);
-        notify(vm);
+    store(parse_command_line(argc, argv, all_options), vm);
+    notify(vm);
 
-        if (vm.size() == 1 && vm.count("version")) {
-            cout << "Group-Share Filesystem (GSFS), Version 1.0 \n"
-                    "Copyright (c) 2015 Jamis Hoo  \n"
-                    "Distributed under the MIT license\n"
-                 << std::flush;
-            return;
-        }
-
-        if ((vm.size() == 1 && vm.count("help")) || vm.size() == 0) {
-            cout << all_options << std::endl;
-            return;
-        }
-
-        if (vm.count("listen") && vm.count("connect")) 
-            throw invalid_argument("Conflict options --listen and --connect. ");
-        
-        if (vm.count("help"))
-            throw invalid_argument("Invalid option --help. ");
-
-        if (vm.count("version"))
-            throw invalid_argument("Invalid option --version. ");
-
-        if (vm.count("listen")) 
-            is_master = 1, address = vm["listen"].as<string>();
-        else if (vm.count("connect")) 
-            is_standby = 1, address = vm["connect"].as<string>();
-        else 
-            throw invalid_argument("Invalid option(s). You must specify an IP address with either --listen or --connect. ");
-
-        if (vm.count("tcp-port")) 
-            tcp_port = vm["tcp-port"].as<uint16_t>();
-        else 
-            throw invalid_argument("Invalid option(s). Yout must specify a port for TCP connection with --tcp-port. ");
-
-        if (vm.count("ssh-port"))
-            ssh_port = vm["ssh-port"].as<uint16_t>();
-        else
-            ssh_port = 22;
-
-        if (vm.count("mount-point"))
-            mount_point = vm["mount-point"].as<boost::filesystem::path>().string();
-        else
-            throw invalid_argument("Invalid option(s). You must specify a mount point for this filesystem. ");
-
-        if (vm.count("working-directory"))
-            tmp_dir = vm["working-directory"].as<boost::filesystem::path>().string();
-        else 
-            throw invalid_argument("Invalid option(s). You must specify a temporary working directory for this filesystem. ");
-    } catch (exception& err) {
-        std::cerr << err.what() << std::endl;
-        is_standby = is_master = 0;
+    // --version
+    if (vm.size() == 1 && vm.count("version")) {
+        cout << "Group-Share Filesystem (GSFS), Version 1.0 \n"
+                "Copyright (c) 2015 Jamis Hoo  \n"
+                "Distributed under the MIT license\n"
+             << std::flush;
+        return;
     }
+    
+    // --help
+    if ((vm.size() == 1 && vm.count("help")) || vm.size() == 0) {
+        cout << all_options << std::endl;
+        return;
+    }
+
+    // check --listen and --connect conflict
+    if (vm.count("listen") && vm.count("connect")) 
+        throw invalid_argument("Conflict options --listen and --connect. ");
+    
+    // redundant --help
+    if (vm.count("help"))
+        throw invalid_argument("Invalid option --help. ");
+
+    // redundata --version
+    if (vm.count("version"))
+        throw invalid_argument("Invalid option --version. ");
+
+    // either --listen or --connect
+    if (vm.count("listen")) 
+        is_master = 1, address = vm["listen"].as<string>();
+    else if (vm.count("connect")) 
+        is_standby = 1, address = vm["connect"].as<string>();
+    else 
+        throw invalid_argument("Invalid option(s). You must specify an IP address with either --listen or --connect. ");
+
+    // --tcp-port
+    if (vm.count("tcp-port")) 
+        tcp_port = vm["tcp-port"].as<uint16_t>();
+    else 
+        throw invalid_argument("Invalid option(s). Yout must specify a port for TCP connection with --tcp-port. ");
+
+    // --ssh-port
+    if (vm.count("ssh-port"))
+        ssh_port = vm["ssh-port"].as<uint16_t>();
+    else
+        ssh_port = 22;
+
+    // --mount-point
+    if (vm.count("mount-point"))
+        mount_point = vm["mount-point"].as<boost::filesystem::path>().string();
+    else
+        throw invalid_argument("Invalid option(s). You must specify a mount point for this filesystem. ");
+
+    // --working-directory
+    if (vm.count("working-directory"))
+        tmp_dir = vm["working-directory"].as<boost::filesystem::path>().string();
+    else 
+        throw invalid_argument("Invalid option(s). You must specify a temporary working directory for this filesystem. ");
 }
