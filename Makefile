@@ -18,13 +18,13 @@ DYLIB = ssh osxfuse boost_system boost_filesystem boost_serialization boost_prog
 LDFLAGS += $(addprefix -l,$(DYLIB))
 
 .PHONY: all
-all: $(BUILDDIR) gsfs
+all: gsfs
 
 $(BUILDDIR):
 	mkdir -p $(BUILDDIR)
 
 # Auto-Dependency Generation
-$(BUILDDIR)%.o : %.cc
+$(BUILDDIR)%.o : %.cc $(BUILDDIR)
 	$(CXX) $(CXXFLAGS) -MD -c -o $@ $<
 	@cp $(BUILDDIR)$*.d $(BUILDDIR)$*.P; \
 		sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
