@@ -20,15 +20,14 @@
 
 struct OptionParser {
 
-    OptionParser() {
-        initialize();
-    }
+    OptionParser() { initialize(); }
 
     void initialize();
     void parse(int, char**);
 
 
     bool is_master;
+    bool is_standby;
     // IP address
     // all nodes should be able to access each other
     std::string address;
@@ -40,6 +39,7 @@ struct OptionParser {
     std::string mount_point;
     std::string tmp_dir;
 
+private:
     boost::program_options::variables_map vm;
     boost::program_options::options_description all_options;  
 };
