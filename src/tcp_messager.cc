@@ -13,22 +13,15 @@
  *  Description: messager is used to pass messages between two peers
  *****************************************************************************/
 #include "tcp_messager.h"
+#include <iostream>
 #include "tcp_manager.h"
 
 void TCPSlaveMessager::read(const Packet& packet) const {
     _owner->read(packet);
 }
 
-void TCPMasterMessager::read(const Packet& packet, Connection::iterator iter) const {
-    _owner->read(packet, iter);
-}
-
 void TCPSlaveMessager::disconnect() const {
     _owner->disconnect();
-}
-
-void TCPMasterMessager::disconnect(Connection::iterator iter) const {
-    _owner->disconnect(iter);
 }
 
 // returns true on error
@@ -70,7 +63,10 @@ void TCPSlaveMessager::do_connect(boost::asio::ip::tcp::resolver::iterator endpo
     boost::asio::async_connect(_socket, endpoint_iterator, 
     [this](boost::system::error_code ec, boost::asio::ip::tcp::resolver::iterator) {
         if (!ec) do_read_header();
-        else disconnect();
+        else {
+            std::cerr << "Cannot connect to master. But filesystem containing only local files is still mounted. ";
+            disconnect();
+        }
     });
 }
 
@@ -121,6 +117,14 @@ void TCPSlaveMessager::do_write() {
     });
 }
 
+void TCPMasterMessager::read(const Packet& packet, Connection::iterator iter) const {
+    _owner->read(packet, iter);
+}
+
+void TCPMasterMessager::disconnect(Connection::iterator iter) const {
+    _owner->disconnect(iter);
+}
+
 // TODO:  bind error
 // returns true on error
 bool TCPMasterMessager::init(const std::string& addr, const uint16_t port) {
@@ -138,10 +142,21 @@ bool TCPMasterMessager::init(const std::string& addr, const uint16_t port) {
 
 // thread call this function will do accept, read and write
 void TCPMasterMessager::start() {
-    _acceptor.open(_endpoint_iterator->endpoint().protocol());
-    _acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
-    _acceptor.bind(_endpoint_iterator->endpoint());
-    _acceptor.listen();
+    boost::system::error_code ec;
+
+    _acceptor.open(_endpoint_iterator->endpoint().protocol(), ec);
+
+    if (!ec)
+        _acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true), ec);
+    if (!ec)
+        _acceptor.bind(_endpoint_iterator->endpoint(), ec);
+    if (!ec)
+        _acceptor.listen(boost::asio::socket_base::max_connections, ec);
+
+    if (ec) {
+        std::cerr << "TCP accept error. " << std::endl;
+        return;
+    }
 
     do_accept();
     _io_service.run();
