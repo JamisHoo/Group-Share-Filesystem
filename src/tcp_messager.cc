@@ -125,7 +125,6 @@ void TCPMasterMessager::disconnect(Connection::iterator iter) const {
     _owner->disconnect(iter);
 }
 
-// TODO:  bind error
 // returns true on error
 bool TCPMasterMessager::init(const std::string& addr, const uint16_t port) {
     boost::system::error_code ec;
