@@ -15,8 +15,8 @@
 
 #include <iostream>
 #include "option_parser.h"
-//#include "user_fs.h"
-//#include "fuse_interface.h"
+#include "user_fs.h"
+#include "fuse_interface.h"
 
 int main(int argc, char** argv) {
 
@@ -29,6 +29,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    /*
     std::cout << "is_master: " << parser.is_master << "\n"
               << "is_standby: " << parser.is_standby << "\n"
               << "address: " << parser.address << "\n"
@@ -36,12 +37,13 @@ int main(int argc, char** argv) {
               << "ssh port: " << parser.ssh_port << "\n"
               << "mount point: " << parser.mount_point << "\n"
               << "tmp dir: " << parser.tmp_dir << "\n";
+    */
 
-    if (!is_master && !is_standby) return 0;
+    if (!parser.is_master && !parser.is_standby) return 0;
 
     // init user fs
     UserFS fs;
-    if (is_master) fs.setMaster();
+    if (parser.is_master) fs.setMaster();
 
     // init dir tree
     try {
