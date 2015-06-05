@@ -17,10 +17,6 @@
 #include <errno.h>
 #include <fcntl.h>
 
-#define FUSE_USE_VERSION 26
-#include <osxfuse/fuse.h>
-#undef FUSE_USE_VERSION
-
 #include "user_fs.h"
 
 fuse_operations FUSEInterface::_gsfs_oper;
