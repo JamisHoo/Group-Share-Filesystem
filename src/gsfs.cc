@@ -29,6 +29,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    
     /*
     std::cout << "is_master: " << parser.is_master << "\n"
               << "is_standby: " << parser.is_standby << "\n"
@@ -38,6 +39,7 @@ int main(int argc, char** argv) {
               << "mount point: " << parser.mount_point << "\n"
               << "tmp dir: " << parser.tmp_dir << "\n";
     */
+    
 
     if (!parser.is_master && !parser.is_standby) return 0;
 
@@ -66,6 +68,12 @@ int main(int argc, char** argv) {
     FUSEInterface fuse;
     fuse.initialize(&fs);
 
+    // copy arguments
+    std::unique_ptr<char[]> argv1(new char[parser.mount_point.length() + 1]);
+    parser.mount_point.copy(argv1.get(), parser.mount_point.length());
+    argv1.get()[parser.mount_point.length()] = 0;
 
+    char* fuse_args[2] = { argv[0], argv1.get() };
 
+    return fuse_main(2, fuse_args, fuse.get(), 0);
 }

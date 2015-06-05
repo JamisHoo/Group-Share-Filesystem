@@ -180,6 +180,7 @@ bool UserFS::initTCPNetwork(const std::string& addr, const uint16_t port) {
 
         _tcp_manager.write(message);
 
+        _main_thread_is_waiting = 1;
         _slave_wait_sem.wait();
     }
 
@@ -263,6 +264,7 @@ void UserFS::slaveRecognized(const uint64_t slave_id, const std::string& dir_tre
         _hosts = merged_hosts;
     }
     // wake up main thread
+    _main_thread_is_waiting = 0;
     _slave_wait_sem.post();
 }
 
@@ -285,6 +287,14 @@ void UserFS::disconnect() {
     { 
         boost::unique_lock< boost::shared_mutex > lock(_access);
         _dir_tree.removeNotOf(_host_id);
+    }
+    // if the first attempt to connect to master is failed,
+    // recognition message will never come, and main thread will forever wait.
+    // wake up the waiting main thread
+    if (_main_thread_is_waiting) {
+        std::cerr << "Cannot connect to master. But filesystem with only local files is still mounted. " << std::endl;
+        _main_thread_is_waiting = 0;
+        _slave_wait_sem.post();
     }
 }
 

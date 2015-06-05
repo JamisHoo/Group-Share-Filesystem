@@ -27,7 +27,7 @@
 class UserFS {
 public:
     UserFS(): _host_id(0), _max_host_id(2), _slave_wait_sem(0), 
-              _tcp_manager(this) { }
+              _main_thread_is_waiting(0), _tcp_manager(this) { }
     ~UserFS() {
         using namespace boost::filesystem;
         // if delete failed, just ignore it
@@ -91,6 +91,7 @@ public:
 private:
     
     // This sem is used to block slave node until it's get master's recognization and dir tree
+    bool _main_thread_is_waiting;
     boost::interprocess::interprocess_semaphore _slave_wait_sem;
 
     // host id 0 -- uninitialized, 1 -- master, >= 2 -- other nodes
