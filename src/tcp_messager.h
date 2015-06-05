@@ -15,8 +15,6 @@
 #ifndef TCP_MESSAGER_H_
 #define TCP_MESSAGER_H_
 
-// DEBUG
-#include <iostream>
 #include <queue>
 #include <list>
 #include <boost/asio.hpp>
