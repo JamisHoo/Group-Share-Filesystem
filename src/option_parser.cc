@@ -17,6 +17,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <boost/filesystem.hpp>
+#include <boost/asio/ip/address.hpp>
 
 void OptionParser::initialize() {
     using namespace std;
@@ -88,6 +89,11 @@ void OptionParser::parse(int argc, char** argv) {
         is_standby = 1, address = vm["connect"].as<string>();
     else 
         throw invalid_argument("Invalid option(s). You must specify an IP address with either --listen or --connect. ");
+
+    boost::system::error_code ec;
+    boost::asio::ip::address::from_string(address, ec);
+    if (ec) 
+        throw invalid_argument("Invalid IP address (" + address + "). ");
 
     // --tcp-port
     if (vm.count("tcp-port")) 
