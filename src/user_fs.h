@@ -28,13 +28,6 @@ class UserFS {
 public:
     UserFS(): _host_id(0), _max_host_id(2), _slave_wait_sem(0), 
               _main_thread_is_waiting(1), _tcp_manager(this) { }
-    ~UserFS() {
-        using namespace boost::filesystem;
-        // if delete failed, just ignore it
-        try {
-            remove_all(path(_tmpdir) / path(_dir));
-        } catch (...) { }
-    }
 
     // calling order of functions below:
     // master node: setMaster -> initDirTree -> initHost -> initTCPNetwork
@@ -46,7 +39,7 @@ public:
                   const uint16_t ssh_port);
 
     // this function may throw exceptions
-    void initDirTree(const std::string& dir, const std::string& tmpdir);
+    void initDirTree(const std::string& working_dir);
 
     // returns true on error
     bool initTCPNetwork(const std::string& addr, const uint16_t port);
@@ -96,8 +89,7 @@ private:
 
     // host id 0 -- uninitialized, 1 -- master, >= 2 -- other nodes
     uint64_t _host_id;
-    std::string _tmpdir;
-    std::string _dir;
+    std::string _working_dir;
 
     // for master, alloc host id for new connected slave
     uint64_t _max_host_id;

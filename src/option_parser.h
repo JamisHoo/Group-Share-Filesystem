@@ -37,7 +37,7 @@ struct OptionParser {
     // port for ssh, default is 22
     uint16_t ssh_port;
     std::string mount_point;
-    std::string tmp_dir;
+    std::string working_dir;
 
 private:
     boost::program_options::variables_map vm;

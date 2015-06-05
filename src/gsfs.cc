@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
 
     // init dir tree
     try {
-        fs.initDirTree(parser.mount_point, parser.tmp_dir);
+        fs.initDirTree(parser.working_dir);
     } catch (std::exception& err) {
         std::cerr << err.what() << std::endl;
         return 1;

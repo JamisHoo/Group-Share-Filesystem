@@ -14,8 +14,8 @@
  *****************************************************************************/
 #include "user_fs.h"
 #include <stdexcept>
+#include <ctime>
 #include "bytes_order.h"
-
 
 // calling order of functions below:
 // master node: setMaster -> initDirTree -> initHost -> initTCPNetwork
@@ -31,8 +31,7 @@ void UserFS::initHost(const std::string& addr, const uint16_t tcp_port, const ui
     Hosts::Host host;
     host.id = _host_id;
     host.address = addr;
-    host.mountdir = _dir;
-    host.tmpdir = _tmpdir;
+    host.working_dir = _working_dir;
     host.tcp_port = tcp_port;
     host.ssh_port = ssh_port;
 
@@ -41,28 +40,18 @@ void UserFS::initHost(const std::string& addr, const uint16_t tcp_port, const ui
 }
 
 // this function may throw exceptions
-void UserFS::initDirTree(const std::string& dir, const std::string& tmpdir) {
+void UserFS::initDirTree(const std::string& working_dir) {
     using namespace boost::filesystem;
 
     boost::unique_lock< boost::shared_mutex > lock(_access);
 
-    if (!exists(dir))
-        throw std::invalid_argument(dir + " not exists. ");
+    if (!exists(working_dir))
+        throw std::invalid_argument(working_dir + " not exists. ");
 
-    if (!is_directory(dir))
-        throw std::invalid_argument(dir + " is not directory. ");
+    if (!is_directory(working_dir))
+        throw std::invalid_argument(working_dir + " is not directory. ");
     
-    if (exists(tmpdir / dir)) 
-        throw std::invalid_argument(std::string("Assert ") + path(tmpdir / dir).string() + " not exists. ");
-
-    if (!is_directory(dir))
-        throw std::invalid_argument(dir + " is not directory. ");
-
-    if (!create_directory(tmpdir / dir))
-        throw std::invalid_argument(std::string("Failed creating directory ") + path(tmpdir / dir).string() + ".");
-    
-    _tmpdir = absolute(tmpdir).string();
-    _dir = dir;
+    _working_dir = absolute(working_dir).string();
 
     _dir_tree.initialize();
     _dir_tree.root()->type = DirTree::TreeNode::DIRECTORY;
@@ -70,12 +59,13 @@ void UserFS::initDirTree(const std::string& dir, const std::string& tmpdir) {
     // If anybody knows how to do that, please tell me. Thanks.
     _dir_tree.root()->size = 0;
     _dir_tree.root()->host_id = _host_id;
-    _dir_tree.root()->mtime = last_write_time(dir);
-    _dir_tree.root()->num_links = hard_link_count(dir);
+    _dir_tree.root()->mtime = time(nullptr);
+    _dir_tree.root()->num_links = hard_link_count(_working_dir);
 
-    std::function< void (const path&, const path&, const DirTree::TreeNode&) > traverseDirectory;
+    // here
+    std::function< void (const path&, const DirTree::TreeNode&) > traverseDirectory;
     traverseDirectory = [this, &traverseDirectory]
-        (const path& dir, const path& _tmpdir, const DirTree::TreeNode& parent)->void {
+        (const path& dir, const DirTree::TreeNode& parent)->void {
         for (auto& f: directory_iterator(dir)) {
             auto file_type = symlink_status(f).type();
 
@@ -108,12 +98,9 @@ void UserFS::initDirTree(const std::string& dir, const std::string& tmpdir) {
                     treenode_type = DirTree::TreeNode::UNKNOWN;
             }
             
-
             if (treenode_type == DirTree::TreeNode::UNKNOWN)
                 continue;
             else if (treenode_type == DirTree::TreeNode::DIRECTORY) {
-                create_directory(_tmpdir / f.path());
-
                 DirTree::TreeNode dirnode;
                 dirnode.type = treenode_type;
                 dirnode.name = f.path().filename().string();
@@ -124,26 +111,22 @@ void UserFS::initDirTree(const std::string& dir, const std::string& tmpdir) {
 
                 auto insert_rtv = parent.children.insert(dirnode);
 
-                traverseDirectory(f, _tmpdir, *(insert_rtv.first));
+                traverseDirectory(f, *(insert_rtv.first));
             } else {
-                // create hard link (src, dst)
-                create_hard_link(f, _tmpdir / f.path());
-
                 DirTree::TreeNode filenode;
                 filenode.type = treenode_type;
                 filenode.name = f.path().filename().string();
                 filenode.size = file_size(f);
                 filenode.mtime = last_write_time(f.path());
                 filenode.host_id = _host_id;
-                // GSFS create another hard link for files except directory
-                filenode.num_links = 1 + hard_link_count(f.path());
+                filenode.num_links = hard_link_count(f.path());
 
                 parent.children.insert(filenode);
             }
         }
     };
 
-    traverseDirectory(_dir, _tmpdir, *_dir_tree.root());
+    traverseDirectory(_working_dir, *_dir_tree.root());
 }
 
 // returns true on error
@@ -201,8 +184,7 @@ intmax_t UserFS::read(const uint64_t node_id, const std::string path,
         if (rtv) return -1;
     }
     
-    boost::filesystem::path remote_path = _hosts[node_id].tmpdir;
-    remote_path /= _hosts[node_id].mountdir;
+    boost::filesystem::path remote_path = _hosts[node_id].working_dir;
     remote_path /= path;
 
     std::string remote_path_string = remote_path.string();
@@ -216,6 +198,8 @@ intmax_t UserFS::read(const uint64_t node_id, const std::string path,
         size_t bytes_read = fin.gcount();
         return bytes_read;
     }
+
+    std::cerr <<"ssh remote path: " << remote_path_string << std::endl;
 
     // read remote file
     return _ssh_manager.read(node_id, remote_path_string, offset, size, buff);
@@ -291,7 +275,6 @@ void UserFS::disconnect() {
     // recognition message will never come, and main thread will forever wait.
     // wake up the waiting main thread
     if (_main_thread_is_waiting) {
-        std::cerr << "Cannot connect to master. But filesystem with only local files is still mounted. " << std::endl;
         _main_thread_is_waiting = 0;
         _slave_wait_sem.post();
     }
@@ -379,8 +362,4 @@ void UserFS::newConnection(const std::string& dir_tree_seq,
     _tcp_manager.writeTo(message, handle);
     sendUpdate(merged_dir_tree_seq, merged_hosts_seq);
 }
-
-
-
-
 

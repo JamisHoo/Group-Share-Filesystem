@@ -49,7 +49,7 @@ void OptionParser::initialize() {
         ("mount-point,m", value<boost::filesystem::path>(), 
             "Specify filesysem mount point. ")
         ("working-directory,w", value<boost::filesystem::path>(), 
-            "Specify temporary directory used when program running. ")
+            "Specify working directory, files in this directory will be shared with other hosts. ")
         ("help,h", 
             "Display this help message. ")
         ("version,v", 
@@ -127,7 +127,7 @@ void OptionParser::parse(const int argc, char** argv) {
 
     // --working-directory
     if (vm.count("working-directory"))
-        tmp_dir = vm["working-directory"].as<boost::filesystem::path>().string();
+        working_dir = vm["working-directory"].as<boost::filesystem::path>().string();
     else 
         throw invalid_argument("Invalid option(s). You must specify a temporary working directory for this filesystem. ");
 }
