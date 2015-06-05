@@ -18,6 +18,7 @@
 #include <libssh/sftp.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <iostream>
 
 intmax_t SSHSession::read(const std::string& path, const size_t offset, const size_t size, char* buff) {
     ssh_session ssh_session;
@@ -43,11 +44,14 @@ intmax_t SSHSession::read(const std::string& path, const size_t offset, const si
                bool(file_handle = sftp_open(sftp_session, path.c_str(), O_RDONLY, 0)) &&
                // seek
                sftp_seek64(file_handle, offset) == 0;
+
     
     intmax_t bytes_read = -1;
 
     if (rtv) 
         bytes_read = sftp_read(file_handle, buff, size);
+    else 
+        std::cerr << "SSH connection failed. " << std::endl;
 
     if (file_handle) sftp_close(file_handle);
     file_handle = nullptr;
