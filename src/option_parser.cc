@@ -26,22 +26,34 @@ void OptionParser::initialize() {
     options_description master_options("Master Node options");
         
     master_options.add_options()
-        ("listen,l", value<string>(), "Run as a master node and listen at this IP address. Both IPv4 and IPv6 are supported. ");
+        ("listen,l", value<string>(), 
+            "Run as a master node and listen at this IP address. Both IPv4 and "
+            "IPv6 are supported. ");
 
     options_description standby_options("Stand By Node options");
 
     standby_options.add_options()
-        ("connect,c", value<string>(), "Run as a stand by node and connect to this IP address. Both IPv4 and IPv6 are supported.");
+        ("connect,c", value<string>(), 
+            "Run as a stand by node and connect to this IP address. Both IPv4 "
+            "and IPv6 are supported.");
 
     options_description generic_options("Generic options");
 
     generic_options.add_options()
-        ("tcp-port,t", value<uint16_t>(), "Specify TCP port. ")
-        ("ssh-port,s", value<uint16_t>(), "Specify SSH port. Default value is 22 ")
-        ("mount-point,m", value<boost::filesystem::path>(), "Specify filesysem mount point. ")
-        ("working-directory,w", value<boost::filesystem::path>(), "Specify temporary directory used when program running. ")
-        ("help,h", "Display this help message. ")
-        ("version,v", "Display version number of this program. ");
+        ("tcp-port,t", value<uint16_t>(), 
+            "Specify TCP port. Master node listens at this port while stand "
+            "by node connects to this port of master node. ")
+        ("ssh-port,s", value<uint16_t>(), 
+            "Specify SSH port. Default value is 22. Listen at this port so that "
+            "other nodes can create a SFTP connection. ")
+        ("mount-point,m", value<boost::filesystem::path>(), 
+            "Specify filesysem mount point. ")
+        ("working-directory,w", value<boost::filesystem::path>(), 
+            "Specify temporary directory used when program running. ")
+        ("help,h", 
+            "Display this help message. ")
+        ("version,v", 
+            "Display version number of this program. ");
         
     all_options.add(master_options).add(standby_options).add(generic_options);
 }
