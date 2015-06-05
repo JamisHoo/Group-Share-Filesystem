@@ -29,18 +29,6 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    
-    /*
-    std::cout << "is_master: " << parser.is_master << "\n"
-              << "is_standby: " << parser.is_standby << "\n"
-              << "address: " << parser.address << "\n"
-              << "tcp port: " << parser.tcp_port << "\n"
-              << "ssh port: " << parser.ssh_port << "\n"
-              << "mount point: " << parser.mount_point << "\n"
-              << "tmp dir: " << parser.tmp_dir << "\n";
-    */
-    
-
     if (!parser.is_master && !parser.is_standby) return 0;
 
     // init user fs
@@ -69,11 +57,21 @@ int main(int argc, char** argv) {
     fuse.initialize(&fs);
 
     // copy arguments
-    std::unique_ptr<char[]> argv1(new char[parser.mount_point.length() + 1]);
-    parser.mount_point.copy(argv1.get(), parser.mount_point.length());
-    argv1.get()[parser.mount_point.length()] = 0;
+    std::string arg_tmp = argv[0];
+    std::vector<char> arg0(arg_tmp.begin(), arg_tmp.end());
+    arg0.push_back(0);
 
-    char* fuse_args[2] = { argv[0], argv1.get() };
+    arg_tmp = parser.mount_point;
+    std::vector<char> arg1(arg_tmp.begin(), arg_tmp.end());
+    arg1.push_back(0);
 
-    return fuse_main(2, fuse_args, fuse.get(), 0);
+    // We must run fuse foreground.
+    // If not, fuse will fork() and the other threads in this process won't work.
+    arg_tmp = "-f";
+    std::vector<char> arg2(arg_tmp.begin(), arg_tmp.end());
+    arg2.push_back(0);
+
+    char* fuse_args[3] = { arg0.data(), arg1.data(), arg2.data() };
+
+    return fuse_main(3, fuse_args, fuse.get(), 0);
 }
