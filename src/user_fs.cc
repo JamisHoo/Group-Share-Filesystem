@@ -199,8 +199,6 @@ intmax_t UserFS::read(const uint64_t node_id, const std::string path,
         return bytes_read;
     }
 
-    std::cerr <<"ssh remote path: " << remote_path_string << std::endl;
-
     // read remote file
     return _ssh_manager.read(node_id, remote_path_string, offset, size, buff);
 }
