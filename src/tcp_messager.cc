@@ -239,10 +239,6 @@ void TCPSlaveMessager::do_write() {
     void TCPMasterMessager::do_new_connection(Connection::iterator connect_iter) {
         boost::asio::ip::tcp::socket& socket = std::get<0>(*connect_iter);
         
-        std::cout << "New connection from " 
-                  << socket.remote_endpoint().address().to_string() << ":"
-                  << socket.remote_endpoint().port() << std::endl;
-        
         do_read_header(connect_iter);
     }
 

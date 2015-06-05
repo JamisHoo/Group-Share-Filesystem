@@ -60,7 +60,6 @@ void TCPManager::read(const Packet& packet, const TCPMasterMessager::Connection:
     uint64_t protocol_type = network_to_host_64(data);
     data += sizeof(uint64_t);
 
-    std::cout << "master read protocol type == " << protocol_type << std::endl;
 
     switch (protocol_type) {
         case 0: {
@@ -112,7 +111,6 @@ void TCPManager::read(const Packet& packet) {
     uint64_t protocol_type = network_to_host_64(data);
     data += sizeof(uint64_t);
 
-    std::cout << "slave read protocol type == " << protocol_type << std::endl;
 
     switch (protocol_type) {
         case 1: {
