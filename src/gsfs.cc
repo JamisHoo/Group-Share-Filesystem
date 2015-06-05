@@ -20,6 +20,7 @@
 
 int main(int argc, char** argv) {
 
+
     // parser options
     OptionParser parser;
     try {
@@ -30,6 +31,9 @@ int main(int argc, char** argv) {
     }
 
     if (!parser.is_master && !parser.is_standby) return 0;
+
+    // fork a new process to run as a daemon
+    if (fork()) return 0;
 
     // init user fs
     UserFS fs;
