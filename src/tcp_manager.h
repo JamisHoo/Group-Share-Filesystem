@@ -34,30 +34,8 @@ public:
     }
 
     // returns true on error
-    bool initialize(const bool is_master, const std::string& addr, const uint16_t port) {
-        delete _master_messager;
-        delete _slave_messager;
-
-        if (is_master) {
-            _is_master = 1;
-
-            _master_messager = new TCPMasterMessager(this);
-            _slave_messager = nullptr;
-
-            if (_master_messager->init(addr, port))
-                return 1;
-        } else {
-            _is_slave = 1;
-
-            _master_messager = nullptr;
-            _slave_messager = new TCPSlaveMessager(this);
-
-            if (_slave_messager->init(addr, port))
-                return 1;
-        }
-        return 0;
-    }
-
+    bool initialize(const bool is_master, const std::string& addr, const uint16_t port);
+ 
     void start() {
         if (_is_master)
             _thread = std::thread([this]() { _master_messager->start(); });
