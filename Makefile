@@ -13,7 +13,7 @@ FSFLAGS = -D_FILE_OFFSET_BITS=64
 
 CXXFLAGS += -std=c++11 -Wextra $(FSFLAGS)
 
-DYLIB = ssh osxfuse boost_system boost_filesystem boost_serialization boost_program_options boost_thread
+DYLIB = pthread ssh osxfuse boost_system boost_filesystem boost_serialization boost_program_options boost_thread
 
 LDFLAGS += $(addprefix -l,$(DYLIB))
 
@@ -25,7 +25,7 @@ $(BUILDDIR):
 
 # Auto-Dependency Generation
 $(BUILDDIR)%.o : %.cc 
-	$(CXX) $(CXXFLAGS) -MD -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -MMD -c -o $@ $<
 	@cp $(BUILDDIR)$*.d $(BUILDDIR)$*.P; \
 		sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
 		-e '/^$$/ d' -e 's/$$/ :/' < $(BUILDDIR)$*.d >> $(BUILDDIR)$*.P; \

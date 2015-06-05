@@ -17,7 +17,7 @@
 
 
 #define FUSE_USE_VERSION 26
-#include <osxfuse/fuse.h>
+#include <fuse.h>
 #undef FUSE_USE_VERSION
 
 class UserFS;
