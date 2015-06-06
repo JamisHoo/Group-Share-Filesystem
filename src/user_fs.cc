@@ -23,22 +23,6 @@
 
 void UserFS::setMaster() { _host_id = 1; }
 
-void UserFS::initHost(const std::string& addr, const uint16_t tcp_port, const uint16_t ssh_port) {
-    boost::unique_lock< boost::shared_mutex > lock(_access);
-
-    // this functions should only be called when program initializes
-    
-    Hosts::Host host;
-    host.id = _host_id;
-    host.address = addr;
-    host.working_dir = _working_dir;
-    host.tcp_port = tcp_port;
-    host.ssh_port = ssh_port;
-
-    // push self's host at 0
-    _hosts.push(host);
-}
-
 // this function may throw exceptions
 void UserFS::initDirTree(const std::string& working_dir) {
     using namespace boost::filesystem;
@@ -127,6 +111,22 @@ void UserFS::initDirTree(const std::string& working_dir) {
     };
 
     traverseDirectory(_working_dir, *_dir_tree.root());
+}
+
+void UserFS::initHost(const std::string& addr, const uint16_t tcp_port, const uint16_t ssh_port) {
+    boost::unique_lock< boost::shared_mutex > lock(_access);
+
+    // this functions should only be called when program initializes
+    
+    Hosts::Host host;
+    host.id = _host_id;
+    host.address = addr;
+    host.working_dir = _working_dir;
+    host.tcp_port = tcp_port;
+    host.ssh_port = ssh_port;
+
+    // push self's host at 0
+    _hosts.push(host);
 }
 
 // returns true on error
