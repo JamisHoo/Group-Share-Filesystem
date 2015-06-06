@@ -3,7 +3,7 @@
  *  Distributed under the MIT license 
  *  (See accompanying file LICENSE or copy at http://opensource.org/licenses/MIT)
  *  
- *  Project: 
+ *  Project: Group-Share Filesystem
  *  Filename: option_parser.cc 
  *  Version: 1.0
  *  Author: Jamis Hoo
@@ -124,10 +124,23 @@ void OptionParser::parse(const int argc, char** argv) {
         mount_point = vm["mount-point"].as<boost::filesystem::path>().string();
     else
         throw invalid_argument("Invalid option(s). You must specify a mount point for this filesystem. ");
+    
+    // check mount point
+    if (!boost::filesystem::exists(mount_point))
+        throw std::invalid_argument("Invalid option(s). Mount point \"" + mount_point + "\" not exists. ");
+    if (!boost::filesystem::is_directory(mount_point))
+        throw std::invalid_argument("Invalid option(s). Mount point \"" + mount_point + "\" is not directory. ");
+    
 
     // --working-directory
     if (vm.count("working-directory"))
         working_dir = vm["working-directory"].as<boost::filesystem::path>().string();
     else 
         throw invalid_argument("Invalid option(s). You must specify a temporary working directory for this filesystem. ");
+
+    // check working-directory
+    if (!boost::filesystem::exists(working_dir))
+        throw std::invalid_argument("Invalid option(s). Working directory \"" + working_dir + "\" not exists. ");
+    if (!boost::filesystem::is_directory(working_dir))
+        throw std::invalid_argument("Invalid option(s). Working directory \"" + working_dir + "\" is not directory. ");
 }

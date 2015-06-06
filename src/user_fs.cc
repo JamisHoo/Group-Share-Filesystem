@@ -29,12 +29,6 @@ void UserFS::initDirTree(const std::string& working_dir) {
 
     boost::unique_lock< boost::shared_mutex > lock(_access);
 
-    if (!exists(working_dir))
-        throw std::invalid_argument(working_dir + " not exists. ");
-
-    if (!is_directory(working_dir))
-        throw std::invalid_argument(working_dir + " is not directory. ");
-    
     _working_dir = absolute(working_dir).string();
 
     _dir_tree.initialize();
