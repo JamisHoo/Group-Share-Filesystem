@@ -193,7 +193,7 @@ intmax_t UserFS::read(const uint64_t node_id, const std::string path,
     if (node_id == _host_id) {
         std::ifstream fin(remote_path_string);
         fin.seekg(offset);
-        fin.read(buff, size);
+        fin.readsome(buff, size);
         if (fin.fail() || fin.bad()) return -1;
         size_t bytes_read = fin.gcount();
         return bytes_read;
