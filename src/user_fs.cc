@@ -30,6 +30,9 @@ void UserFS::initDirTree(const std::string& working_dir) {
     boost::unique_lock< boost::shared_mutex > lock(_access);
 
     _working_dir = absolute(working_dir).string();
+    // add trailing slash
+    if (_working_dir.size() && _working_dir.back() != '/')
+        _working_dir.push_back('/');
 
     _dir_tree.initialize();
     _dir_tree.root()->type = DirTree::TreeNode::DIRECTORY;
@@ -179,7 +182,7 @@ intmax_t UserFS::read(const uint64_t node_id, const std::string path,
     }
     
     boost::filesystem::path remote_path = _hosts[node_id].working_dir;
-    remote_path /= path;
+    remote_path /= path.substr(path.front() == '/'? 1: 0);
 
     std::string remote_path_string = remote_path.string();
 
@@ -187,8 +190,8 @@ intmax_t UserFS::read(const uint64_t node_id, const std::string path,
     if (node_id == _host_id) {
         std::ifstream fin(remote_path_string);
         fin.seekg(offset);
-        fin.readsome(buff, size);
-        if (fin.fail() || fin.bad()) return -1;
+        fin.read(buff, size);
+        if (fin.bad()) return -1;
         size_t bytes_read = fin.gcount();
         return bytes_read;
     }
