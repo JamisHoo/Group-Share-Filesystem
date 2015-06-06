@@ -316,7 +316,9 @@ void UserFS::newConnection(const std::string& dir_tree_seq,
     // else
 
     // alloc slave id
+    boost::system::error_code ec;
     uint64_t slave_id = _max_host_id++;
+    slave_host.address = std::get<0>(*handle).remote_endpoint(ec).address().to_string(ec);
     slave_host.id = slave_id;
     slave_dir_tree.root()->setHostID(slave_id);
 
