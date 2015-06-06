@@ -13,7 +13,10 @@ FSFLAGS = -D_FILE_OFFSET_BITS=64
 
 CXXFLAGS += -std=c++11 -Wextra $(FSFLAGS)
 
-DYLIB = pthread ssh osxfuse boost_system boost_filesystem boost_serialization boost_program_options boost_thread
+DYLIB = $(if $(filter $(shell uname),Darwin),osxfuse,fuse) \
+		pthread ssh \
+		boost_system boost_filesystem boost_serialization \
+		boost_program_options boost_thread
 
 LDFLAGS += $(addprefix -l,$(DYLIB))
 
