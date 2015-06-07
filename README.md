@@ -47,10 +47,10 @@ When a read operation arises, the reader directly connects to the store node via
 ##Example 
 ###Dependency 
 
-* FUSE for OS X (for Mac OS X) or FUSE (for Linux)
-* libssh
-* OpenSSH
-* Boost C++ Libraries 1.58.0 or later
+* [FUSE for OS X](https://osxfuse.github.io/) (for Mac OS X) or [FUSE](http://fuse.sourceforge.net/) (for Linux)
+* [libssh](https://www.libssh.org/)
+* [OpenSSH](http://www.openssh.com/)
+* [Boost C++ Libraries](http://www.boost.org/) 1.58.0 or later
 * all nodes belong to the same network
 * SSH is properly configured so that all nodes can directly login to each other via public key authentication
 
