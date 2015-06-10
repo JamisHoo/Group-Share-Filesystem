@@ -1,5 +1,5 @@
 #Group-Share Filesystem
-The Group-Share Filesystem (GSFS) is a filesystem client that lets a host share files with some remote hosts within a group and also view the files remote hosts have shared over network. All these hosts need to have GSFS client, and require TCP/IP, SSH, SFTP installed since clients use TCP/IP to send metadata and SFTP to transfer file. FUSE is also required because all shared files are mounted as a userspace filesystem. Hosts in the group for now can only read the files shared by other hosts. The same host is allowed to join different groups simultaneously and the opetions won't disturb each other.
+The Group-Share Filesystem (GSFS) is a filesystem client that lets a host share files with some remote hosts within a group and also view the files remote hosts have shared over network. All these hosts need to have GSFS client, and require TCP/IP, SSH, SFTP installed since clients use TCP/IP to send metadata and SFTP to transfer file. FUSE is also required because all shared files are mounted as a userspace filesystem. Hosts in the group for now can only read the files shared by other hosts. The same host is allowed to join different groups simultaneously and the operations won't disturb each other.
 
 Thanks to Terran Lee for naming this project.
 
